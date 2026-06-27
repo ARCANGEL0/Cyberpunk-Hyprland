@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# dead-simple screen-record toggle: if it's recording, stop. if it's not, start.
+TARGET_DIR="$HOME/Videos/Recordings"; mkdir -p "$TARGET_DIR"
+SOCK="$XDG_RUNTIME_DIR/astal/cyberpunk.sock"
+AUDIO="$(cd "$(dirname "$0")/../assets/audio" && pwd)"
+MON_HELPER="$(cd "$(dirname "$0")" && pwd)/active-monitor"
+
+exec 9>"/tmp/hypr-record.lock"
+flock -w 2 9 || exit 0          # wait up to 2s for the lock, then just give up instead of stacking
+
+if pgrep -x wf-recorder >/dev/null; then
+    # it's recording -> stop it. SIGINT (not -9) so wf-recorder can finish writing the mp4 properly
+    pkill -INT -x wf-recorder
+    echo "record-stop" | socat - UNIX-CONNECT:"$SOCK" 2>/dev/null
+else
+    # not recording -> start. 9>&- hands off without the lock fd, setsid cuts it loose from this shell.
+    F="$TARGET_DIR/$(date +%Y-%m-%d_%H-%M-%S).mp4"
+    read -r MON MX MY MW MH < <("$MON_HELPER")
+    setsid wf-recorder -o "$MON" -f "$F" -p preset=ultrafast -p crf=28 >/dev/null 2>&1 9>&- &
+    # play the "active" cue along with the record-start animation (only when starting, not stopping)
+    setsid -f sh -c "play -q -v 1.5 \"$AUDIO/active.ogg\" 2>/dev/null || mpv --no-video --really-quiet --volume=150 \"$AUDIO/active.ogg\" 2>/dev/null" >/dev/null 2>&1
+    echo "record-start $MX $MY $MW $MH" | socat - UNIX-CONNECT:"$SOCK" 2>/dev/null
+fi

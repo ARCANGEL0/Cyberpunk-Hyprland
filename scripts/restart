@@ -1,0 +1,7 @@
+#!/bin/sh
+# nuke the running AGS instance and start it fresh.
+"$HOME/.local/bin/ags" quit -i cyberpunk 2>/dev/null
+pkill -9 -f '[c]ore.ts'
+sleep 1
+setsid "$HOME/.local/bin/ags" run --gtk 3 "$HOME/.config/hypr/themes/cyberpunk/core.ts" \
+    >/tmp/ags-cyberpunk.log 2>&1 </dev/null &

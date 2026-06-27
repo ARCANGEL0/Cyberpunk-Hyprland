@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 22 22"
+   version="1.1"
+   id="svg5"
+   sodipodi:docname="dialog-close.svg"
+   inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <metadata
+     id="metadata11">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs9" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1920"
+     inkscape:window-height="1013"
+     id="namedview7"
+     showgrid="false"
+     inkscape:zoom="14.272727"
+     inkscape:cx="-9.5987263"
+     inkscape:cy="6.0254778"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg5"
+     inkscape:pagecheckerboard="0" />
+  <style
+     type="text/css"
+     id="current-color-scheme">
+        .ColorScheme-NegativeText {
+            color:#da4453;
+        }
+    </style>
+  <g
+     transform="matrix(1.5,0,0,1.5,-1,-1)"
+     id="g9"
+     style="fill:#e6e6e6">
+    <path
+       style="fill:#e6e6e6"
+       class="ColorScheme-Text"
+       d="M 5,4 C 4.4477,4 4,4.4477 4,5 4,5.2652 4.1055,5.5195 4.293,5.707 l 6,6 C 10.48,11.895 10.735,12 11,12 c 0.552,0 1,-0.448 1,-1 0,-0.265 -0.105,-0.52 -0.293,-0.707 l -6,-6 C 5.5195,4.1055 5.2652,4 5,4 Z"
+       id="path5" />
+    <path
+       style="fill:#e6e6e6"
+       class="ColorScheme-Text"
+       d="M 5,12 C 4.4477,12 4,11.552 4,11 4,10.735 4.1055,10.48 4.293,10.293 l 6,-6 C 10.48,4.105 10.735,4 11,4 c 0.552,0 1,0.448 1,1 0,0.265 -0.105,0.52 -0.293,0.707 l -6,6 C 5.5195,11.895 5.2652,12 5,12 Z"
+       id="path7" />
+  </g>
+</svg>

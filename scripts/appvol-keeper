@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# ─────────────────────────────────────────────────────────────────────────────
+# helper scrpt for audio volume management per application
+#  the state file (the AGS audio modal writes it, one app per line) looks like:
+#      <application.name>=<percent>      e.g.  Spotify=60
+# ─────────────────────────────────────────────────────────────────────────────
+STATE="${1:-$HOME/.cache/cyberpunk/appvol.conf}"
+mkdir -p "$(dirname "$STATE")"; touch "$STATE"
+exec 9>"$HOME/.cache/cyberpunk/appvol.lock" 2>/dev/null || exec 9>"/tmp/cyber-appvol.lock"
+flock -n 9 || exit 0
+command -v pactl >/dev/null 2>&1 || exit 0
+apply_all() {
+    [ -s "$STATE" ] || return 0
+    pactl list sink-inputs 2>/dev/null | awk '
+        /^Sink Input #/{ if(id!="") print id"|"name"|"vol; id=substr($3,2); name=""; vol="" }
+        /Volume:/ && vol=="" { for(k=1;k<=NF;k++) if($k ~ /%$/){g=$k; sub(/%/,"",g); vol=g; break} }
+        /[Aa]pplication\.name = /{ name=$0; sub(/.*= "/,"",name); sub(/".*/,"",name) }
+        END{ if(id!="") print id"|"name"|"vol }
+    ' | while IFS='|' read -r sid sname svol; do
+        [ -n "$sname" ] || continue
+        want=$(awk -F= -v n="$sname" '$1==n{v=$2} END{print v}' "$STATE")
+        [ -n "$want" ] || continue
+        cur="${svol:-100}"
+        diff=$(( cur > want ? cur - want : want - cur ))
+        [ "$diff" -gt 2 ] && pactl set-sink-input-volume "$sid" "${want}%" 2>/dev/null
+    done
+}
+apply_all                      
+pactl subscribe 2>/dev/null | while read -r ev; do
+    case "$ev" in
+        *"on sink-input"*) apply_all ;;
+    esac
+done

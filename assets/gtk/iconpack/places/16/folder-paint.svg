@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 16 16"
+   version="1.1"
+   id="svg6"
+   sodipodi:docname="folder-paint.svg"
+   inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview8"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     showgrid="false"
+     inkscape:zoom="38.875"
+     inkscape:cx="8"
+     inkscape:cy="7.9871383"
+     inkscape:window-width="1920"
+     inkscape:window-height="1007"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg6" />
+  <defs
+     id="defs3051">
+    <style
+       type="text/css"
+       id="current-color-scheme">
+      .ColorScheme-Text {
+        color:#232629
+      }
+      </style>
+  </defs>
+  <path
+     style="fill:#eff0f1;fill-opacity:1"
+     d="M 2.09375 1.6582031 L 2.09375 1.6601562 C 2.06375 1.6601562 2.0403906 1.6597344 2.0253906 1.6777344 C 1.5463906 2.1567344 8.0917969 8.1660156 8.0917969 8.1660156 L 10.544922 10.5 C 9.7539219 12.345 12.232578 12.374547 12.767578 13.310547 C 13.002578 13.720547 12.716062 14.277641 12.289062 14.306641 C 13.138063 14.586641 14.2815 12.957109 13.9375 12.037109 C 13.5275 10.938109 13.112031 10.462906 12.332031 10.128906 C 12.010031 9.9909063 11.190297 9.979625 10.904297 10.140625 L 8.6328125 7.6269531 C 8.6328125 7.6269531 3.02275 1.7392031 2.09375 1.6582031 z M 3.1289062 7.4921875 C 2.9119062 7.4931875 2.84375 7.8082813 2.84375 8.2382812 C 2.88475 9.0882812 3.42275 11.568 6.09375 13.375 C 8.34275 14.897 12.459578 14.346422 12.392578 13.482422 C 11.487578 12.358422 9.973125 13.060141 9.953125 10.369141 C 9.073125 10.379141 8.1251562 10.238375 8.1601562 10.609375 C 8.3081562 12.161375 5.8465781 11.041984 4.8925781 9.4589844 C 3.9345781 8.0079844 3.4079063 7.4931406 3.1289062 7.4941406 L 3.1289062 7.4921875 z M 6.6347656 9.4082031 C 6.4887656 9.4082031 6.3724062 9.4567344 6.3164062 9.5527344 C 6.2054063 9.7447344 6.38475 10.058953 6.71875 10.251953 C 7.05275 10.444953 7.4143906 10.443953 7.5253906 10.251953 C 7.6363906 10.059953 7.4550937 9.7466875 7.1210938 9.5546875 C 6.9540938 9.4586875 6.6347656 9.5561562 6.6347656 9.4101562 L 6.6347656 9.4082031 z "
+     class="ColorScheme-Text"
+     id="path4" />
+</svg>

@@ -1,0 +1,230 @@
+#madeby:
+# ╔═════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+# ║      ░░░░░░░░░      ░░░░░░░░░░░░         ░░░░░░░░░░░░   ░░░         ░░░   ░░░                  ░░░░░░░░░    ║
+# ║     ░░░░░░░░░░     ░░░░░░░░░░░░░        ░░░░░░░░░░░░░  ░░░░        ░░░░  ░░░░                 ░░░░░░░░░░    ║
+# ║   ░█████████░ ░░░ ████████████░ ░░░   ░████████████░  ███░ ░░░   ░███░  ███░░               ░█████████░ ░░░ ║
+# ║  ░░█████████ ░░░░ ████████████ ░░░░  ░░████████████   ███ ░░░░  ░░███   ███░░              ░░█████████ ░░░░ ║
+# ║ ███░ ░░░░░░░███░░ ███░ ░░░░░░░███░  ███░░                ███░ ░███░     ███░░             ███░░       ███░░ ║
+# ║ ███ ░░░░░░░░███░░ ███ ░░░░░░░░███   ███░░                ███ ░░███      ███░░             ███░░       ███░░ ║
+# ║ ███████████████░░ ████████████░░    ███░░                  ░███░ ░░░    ███░░             ███░░       ███░░ ║
+# ║ ███████████████░░ ████████████░░    ███░░                 ░░███ ░░░░    ███░░             ███░░       ███░░ ║
+# ║ ███░░       ███░░ ███░░    ███░ ░░░ ███░ ░░░░░░░░░░░░   ░███░  ███░ ░░░ ███░ ░░░░░░░░░░░░ ███░ ░░░░░░░███░  ║
+# ║ ███░░       ███░░ ███░░    ███ ░░░░ ███ ░░░░░░░░░░░░░  ░░███   ███ ░░░░ ███ ░░░░░░░░░░░░░ ███ ░░░░░░░░███   ║
+# ║ ███░        ███░  ███░        ███░     ████████████░  ███░        ███░  ███████████████░     █████████░     ║
+# ║ ███         ███   ███         ███      ████████████   ███         ███   ███████████████      █████████      ║
+# ╚═════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+#  My cyberpunk 2077 rice for hyprland 0.55
+# Theme built on top of astal + AGS v3, my custom layer-shell / HUD engine. the theme's core is a single
+#  AGS script (core.ts) that draws the whole HUD and handles all the logic for the widgets, the keybinds, and the IPC socket. the rest of the files are
+#  just assets and helper scripts. the theme is designed to be as plug-and-play as possible, with no manual setup required beyond installing AGS.
+#  source this file from your hyprland.conf:
+#     $cyberpunk=$THEME/cyberpunk
+#     source=$cyberpunk/theme.conf
+###############################################################################
+# kill any external bars/notifications and stop their services so they stay dead
+exec = killall -9 waybar mako dunst swaync 2>/dev/null; systemctl --user stop waybar mako dunst swaync 2>/dev/null || true
+# now start the theme's own AGS instance
+exec=$HOME/.local/bin/ags quit -i cyberpunk 2>/dev/null
+exec=sleep 1 && $HOME/.local/bin/ags run --gtk 3 $HOME/.config/hypr/themes/cyberpunk/core.ts >/tmp/cyberhypr-debug.log 2>&1
+exec=awww-daemon
+exec=$cyberpunk/scripts/ws pin
+exec-once = $cyberpunk/quickshell/lock.sh
+
+# kitty -> point its config at mine (assets/kitty) to blend theme, comment if not needed
+exec = mkdir -p $HOME/.config/kitty && ln -sfn $cyberpunk/assets/kitty/kitty.conf $HOME/.config/kitty/kitty.conf
+
+# GTK icons -> custom icons to match blue icons from cyberpunk menus
+exec = mkdir -p $HOME/.local/share/icons && ln -sfn $cyberpunk/assets/gtk/iconpack $HOME/.local/share/icons/iconpack
+exec = gsettings set org.gnome.desktop.interface icon-theme 'iconpack'
+
+# cursor -> NeuroDance (assets/cursor), linked in under the name "neurodance"
+exec = ln -sfn $cyberpunk/assets/cursor $HOME/.local/share/icons/neurodance
+exec = gsettings set org.gnome.desktop.interface cursor-theme 'neurodance'
+exec = hyprctl setcursor neurodance 48
+env = XCURSOR_THEME,neurodance
+env = XCURSOR_SIZE,48
+env = QT_STYLE_OVERRIDE,kvantum
+exec-once = $cyberpunk/scripts/apply_theme
+
+# Kvantum theme -> Daemon from theme assets
+exec-once = mkdir -p $HOME/.config/Kvantum/Daemon && cp -f $cyberpunk/assets/gtk/DaemonKvantum/Daemon.kvconfig $HOME/.config/Kvantum/Daemon/Daemon.kvconfig && cp -f $cyberpunk/assets/gtk/DaemonKvantum/Daemon.svg $HOME/.config/Kvantum/Daemon/Daemon.svg && echo '[General]' > $HOME/.config/Kvantum/kvantum.kvconfig && echo 'theme=Daemon' >> $HOME/.config/Kvantum/kvantum.kvconfig
+
+# ── keybinds (most of these just talk to the cyberpunk astal socket) ──────────
+$AUG_SOCK=$XDG_RUNTIME_DIR/astal/cyberpunk.sock
+
+# ╭─ THEME MODIFIER ──────────────────────────────────────
+# | Most of the keybinds use $themeMod as SUPER + SHIFT + KEY.
+# | Change accordingly if you want to use a different modifier combo for the theme's keybinds.
+# ╰────────────────────────────────────────
+$themeMod = SUPER SHIFT # default keybind
+bindr=SUPER,SUPER_L,exec,$HOME/.config/hypr/themes/cyberpunk/scripts/launcher
+bind=SUPER,space,exec,$HOME/.config/hypr/themes/cyberpunk/scripts/launcher
+# SUPER+D peeks/un-peeks the desktop (the actual bind is down in the window-management section)
+
+bind=$themeMod,Z,exec,echo "toggle-hud" | socat - UNIX-CONNECT:$AUG_SOCK # Toggle HUD visibility. 
+bind=$themeMod,V,exec,echo "modal vol"  | socat - UNIX-CONNECT:$AUG_SOCK # Toggle volume modal.
+bind=$themeMod,U,exec,echo "modal brt"  | socat - UNIX-CONNECT:$AUG_SOCK # Toggle brightness modal.
+bind=$themeMod,M,exec,echo "modal mic"  | socat - UNIX-CONNECT:$AUG_SOCK # Toggle microphone modal.
+bind=$themeMod,O,exec,echo "player"     | socat - UNIX-CONNECT:$AUG_SOCK # Open media player.
+bind=$themeMod,N,exec,echo "modal wifi" | socat - UNIX-CONNECT:$AUG_SOCK # Toggle WiFi modal.
+bind=$themeMod,B,exec,echo "modal bt"   | socat - UNIX-CONNECT:$AUG_SOCK # Toggle Bluetooth modal.
+bind=$themeMod,P,exec,echo "modal pwr"  | socat - UNIX-CONNECT:$AUG_SOCK # Toggle power modal (shutdown/restart/etc).
+bind=$themeMod,W,exec,echo "weather"    | socat - UNIX-CONNECT:$AUG_SOCK # Open weather widget.
+bind=$themeMod,Y,exec,echo "modal bat"  | socat - UNIX-CONNECT:$AUG_SOCK # Toggle battery modal (battery percentage, time remaining, etc).
+bind=$themeMod,C,exec,echo "modal sys"  | socat - UNIX-CONNECT:$AUG_SOCK # Toggle system modal (CPU usage, RAM usage, etc).
+bind=$themeMod,H,exec,echo "modal keys" | socat - UNIX-CONNECT:$AUG_SOCK # Toggle keybind help menu. 
+bind=$themeMod,R,exec,$HOME/.config/hypr/themes/cyberpunk/scripts/screenrecord # Start/Stop screen recording
+bind=$themeMod,T,exec,$HOME/.config/hypr/themes/cyberpunk/scripts/terminal # Open netrunner terminal (cool-retro-term)
+bind=$themeMod,S,exec,$HOME/.config/hypr/themes/cyberpunk/scripts/screenshot # Take a screenshot
+
+
+# kill mode (SUPER+SHIFT+K) -> my "overkill" overlay. click any window to kill it.
+bind=$themeMod,K,exec,$HOME/.config/hypr/themes/cyberpunk/scripts/overkill
+submap=kill
+bind=,mouse:272,exec,$HOME/.config/hypr/themes/cyberpunk/scripts/overkill kill
+bind=,ESC,exec,$HOME/.config/hypr/themes/cyberpunk/scripts/overkill exit
+bind=,escape,exec,$HOME/.config/hypr/themes/cyberpunk/scripts/overkill exit
+submap=reset
+
+bind=$themeMod,L,exec,$cyberpunk/quickshell/lock.sh # Lock the screen
+bind=CTRL SHIFT ALT,r,exec,$HOME/.config/hypr/themes/cyberpunk/scripts/restart # auto explanatory
+bind=SUPER CTRL,Delete,exec,hyprctl reload 
+
+
+#  _   _                  _                 _ 
+# | | | |                | |               | |
+# | |_| |_   _ _ __  _ __| | __ _ _ __   __| |
+# |  _  | | | | '_ \| '__| |/ _` | '_ \ / _` |
+# | | | | |_| | |_) | |  | | (_| | | | | (_| |
+# \_| |_/\__, | .__/|_|  |_|\__,_|_| |_|\__,_|
+#         __/ | |                             
+#        |___/|_|     k e y b i n d s                  
+
+# fullscreen toggle  /  float <-> tile toggle
+bind=SUPER SHIFT,F,fullscreen,0
+bind=SUPER,F,togglefloating
+
+# the desktop peek toggle (hide every window to reveal the wallpaper/HUD, press again to bring them back)
+bind=SUPER,D,exec,$HOME/.config/hypr/themes/cyberpunk/scripts/peek
+
+# move focus to the tiled window in whichever arrow direction you press
+bind=SUPER,Left,movefocus,l
+bind=SUPER,Right,movefocus,r
+bind=SUPER,Up,movefocus,u
+bind=SUPER,Down,movefocus,d
+
+# shove the focused window around within the tiling layout
+bind=SUPER SHIFT,Left,movewindow,l
+bind=SUPER SHIFT,Right,movewindow,r
+bind=SUPER SHIFT,Up,movewindow,u
+bind=SUPER SHIFT,Down,movewindow,d
+# resize the focused window (40px at a time)
+bind=CTRL SHIFT,Left,resizeactive,-40 0
+bind=CTRL SHIFT,Right,resizeactive,40 0
+bind=CTRL SHIFT,Up,resizeactive,0 -40
+bind=CTRL SHIFT,Down,resizeactive,0 40
+
+
+# send the focused window to a workspace and jump there with it (ALT+SHIFT+number)
+bind=ALT SHIFT,1,exec,$cyberpunk/scripts/ws move 1
+bind=ALT SHIFT,2,exec,$cyberpunk/scripts/ws move 2
+bind=ALT SHIFT,3,exec,$cyberpunk/scripts/ws move 3
+bind=ALT SHIFT,4,exec,$cyberpunk/scripts/ws move 4
+bind=ALT SHIFT,5,exec,$cyberpunk/scripts/ws move 5
+bind=ALT SHIFT,6,exec,$cyberpunk/scripts/ws move 6
+bind=ALT SHIFT,7,exec,$cyberpunk/scripts/ws move 7
+bind=ALT SHIFT,8,exec,$cyberpunk/scripts/ws move 8
+bind=ALT SHIFT,9,exec,$cyberpunk/scripts/ws move 9
+bind=ALT SHIFT,0,exec,$cyberpunk/scripts/ws move 10
+bind=SUPER,1,exec,$cyberpunk/scripts/ws go 1
+bind=SUPER,2,exec,$cyberpunk/scripts/ws go 2
+bind=SUPER,3,exec,$cyberpunk/scripts/ws go 3
+bind=SUPER,4,exec,$cyberpunk/scripts/ws go 4
+bind=SUPER,5,exec,$cyberpunk/scripts/ws go 5
+bind=SUPER,6,exec,$cyberpunk/scripts/ws go 6
+bind=SUPER,7,exec,$cyberpunk/scripts/ws go 7
+bind=SUPER,8,exec,$cyberpunk/scripts/ws go 8
+bind=SUPER,9,exec,$cyberpunk/scripts/ws go 9
+bind=SUPER,0,exec,$cyberpunk/scripts/ws go 10
+
+$TERM=kitty
+$TERMFLOAT=kitty --title fly_is_foot
+
+general {
+    col.active_border   = rgba(ff2d3dff) rgba(ff6677ff) 45deg
+    col.inactive_border = rgba(ff2d3d44)
+    border_size = 2
+    gaps_in  = 12
+    gaps_out = 24
+}
+
+decoration {
+    rounding = 0
+    blur {
+        enabled = 1
+        size = 3
+        passes = 1
+        noise = 0.04
+    }
+    # adds a red neon glow to the active window borders. 
+    shadow {
+        enabled = true
+        range = 8
+        render_power = 2
+        color = rgba(ff2d3d55)
+        color_inactive = rgba(ff2d3d22)
+        offset = 0 0
+    }
+    screen_shader =
+}
+# loads custom hyprbars plugin (draws the bars directly on the windows, instead of as separate layer-shell surfaces, for better performance and less latency).
+# comment out if you want to use a different bar or no bar at all. if you do comment it out, make sure to 
+# also comment out the `plugin { hyprbars { ... } }` section below, since that just configures the plugin.
+exec-once = hyprctl plugin load $HOME/.config/hypr/themes/cyberpunk/assets/cyberbars/hyprbars.so
+plugin {
+    hyprbars {
+        # dark-red bar fill, red title text -- the frame/glow itself is drawn by pluginh
+        bar_height = 28
+        bar_color = rgba(160409f2)
+        col.text = rgba(ff2d3dff)
+        bar_text_size = 12
+        bar_text_font = FiraCode Nerd Font
+        bar_part_of_window = true
+        bar_precedence_over_border = false
+        bar_padding = 12
+        bar_button_padding = 10
+        hyprbars-button = rgb(ff2d3d), 15, , hyprctl dispatch killactive
+        hyprbars-button = rgb(ff2d3d), 14, , hyprctl dispatch fullscreen 1
+        hyprbars-button = rgb(ff2d3d), 14, , hyprctl dispatch movetoworkspacesilent special:minimized
+    }
+}
+
+layerrule = blur 1, match:namespace modal_.*
+layerrule = blur 1, match:namespace radioport
+layerrule = ignorealpha 0.1, match:namespace radioport
+
+# cool-retro-term rules specific: make it float, centered, 60x65% ──
+windowrule = float on,      match:class ^(cool-retro-term)$
+windowrule = center 1,      match:class ^(cool-retro-term)$
+windowrule = size 60% 65%,  match:class ^(cool-retro-term)$
+
+windowrule = float on,      match:class ^(xdg-desktop-portal-gtk)$
+windowrule = center 1,      match:class ^(xdg-desktop-portal-gtk)$
+windowrule = size 60% 65%,  match:class ^(xdg-desktop-portal-gtk)$
+windowrule = float on,      match:title ^(File Upload|Save As|Save File|Save Image|Enter name of file|Open File|Open Files|Select File|Select Files|Choose.*[Ff]ile|Upload File).*$
+windowrule = center 1,      match:title ^(File Upload|Save As|Save File|Save Image|Enter name of file|Open File|Open Files|Select File|Select Files|Choose.*[Ff]ile|Upload File).*$
+windowrule = size 60% 65%,  match:title ^(File Upload|Save As|Save File|Save Image|Enter name of file|Open File|Open Files|Select File|Select Files|Choose.*[Ff]ile|Upload File).*$
+windowrule = float on,  match:title ^(Rename.*|Create New Folder|Create Folder|Create Document|Bulk Rename.*|Properties.*|Confirm to replace.*|File Operation.*|Permissions.*|Delete|Trash|Empty Trash)$
+windowrule = center 1,  match:title ^(Rename.*|Create New Folder|Create Folder|Create Document|Bulk Rename.*|Properties.*|Confirm to replace.*|File Operation.*|Permissions.*|Delete|Trash|Empty Trash)$
+
+animations {
+    enabled = 1
+    bezier = swiftOut, 0.05, 0.7, 0.1, 1.0
+    animation = windows,     1, 4, swiftOut, slide
+    animation = windowsIn,   1, 4, swiftOut, slide left
+    animation = windowsOut,  1, 3, swiftOut, slide right
+    animation = windowsMove, 1, 4, swiftOut, slide
+    animation = fade,        1, 4, swiftOut
+    animation = workspaces,  0
+    animation = layers,      1, 3, swiftOut, fade
+}

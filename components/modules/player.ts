@@ -1,0 +1,370 @@
+import { Window, DrawingArea, EventBox, activeMonitor } from "../../widget.ts"
+import { Anchor, Layer, Exclusivity, Keymode } from "../../widget.ts"
+import { interval, timeout, execAsync } from "astal"
+import Gdk from "gi://Gdk?version=3.0"
+import GdkPixbuf from "gi://GdkPixbuf"
+import Pango from "gi://Pango?version=1.0"
+import PangoCairo from "gi://PangoCairo?version=1.0"
+import { NEON, f } from "./colors.ts"
+import { SCREEN_WIDTH, SCREEN_HEIGHT } from "../../env.ts"
+
+const TITLE = "Chakra Petch", MONO = "JetBrains Mono"
+const Cairo: any = (imports as any).cairo
+const cR = f(NEON.red), cC = f(NEON.cyan)
+
+const PW = 560, PH = 648, CSZ = 186
+
+let pWin: any = null, pArea: any = null
+let visible = false
+let title = "", artist = "", source = "", status = "", vol = 0, muted = false, position = 0, length = 0
+let coverUrl = "", coverPb: any = null, coverScaled: any = null
+let players: any[] = []
+let curPlayer = "", activeName = ""
+let hitRegions: any[] = []
+let intro = 0, introTarget = 0
+let hoverIdx = -1, hoverA = 0
+let playStart = 0, wasPlaying = false, iconPos: any = null
+let panelSurf: any = null, panelDirty = true
+let pollT: any = null, animT: any = null
+let plBars = [0.4, 0.7, 0.5], plT = 0, tick = 0
+
+const trunc = (s, n) => (s && s.length > n) ? s.slice(0, n - 1) + "…" : (s || "")
+const prettyName = (n) => { const b = (n || "").split(".")[0].replace(/[_-]+/g, " ").trim(); return b ? b.charAt(0).toUpperCase() + b.slice(1) : (n || "?") }
+const fmt = (us) => { const s = Math.max(0, Math.floor((us || 0) / 1e6)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` }
+const freqOf = (i) => (89.3 + i * 2.4 + (i % 2) * 0.5 + (i % 3) * 0.3).toFixed(1)
+
+const loadCover = (url) => {
+ if (url === coverUrl) return
+ coverUrl = url; coverPb = null; coverScaled = null
+ if (!url) { panelDirty = true; pArea && pArea.queue_draw(); return }
+ const apply = (path) => { if (url !== coverUrl) return; try { coverPb = GdkPixbuf.Pixbuf.new_from_file(path); coverScaled = coverPb.scale_simple(CSZ, CSZ, GdkPixbuf.InterpType.BILINEAR) } catch {} panelDirty = true; pArea && pArea.queue_draw() }
+ if (url.startsWith("file://")) apply(decodeURIComponent(url.slice(7)))
+ else if (/^https?:\/\//.test(url)) {
+     const file = `/tmp/aug-cover-${url.replace(/[^a-zA-Z0-9]/g, "").slice(-44)}`
+     execAsync(["sh", "-c", '[ -s "$1" ] || curl -sLf --max-time 8 -o "$1" "$2"', "sh", file, url]).then(() => apply(file)).catch(() => {})
+ }
+}
+
+const pctl = (name, args) => `playerctl ${name ? `-p '${name}' ` : ""}${args}`
+const fetchMeta = (name) => {
+ execAsync(["sh", "-c", pctl(name, "metadata --format '{{title}}|;|{{artist}}|;|{{mpris:artUrl}}|;|{{status}}|;|{{position}}|;|{{mpris:length}}' 2>/dev/null")])
+     .then((out) => {
+         const L = (out || "").trim().split("|;|")
+         title = L[0] || ""; artist = L[1] || ""; loadCover(L[2] || ""); status = L[3] || ""
+         if (status === "Playing" && !wasPlaying) playStart = Date.now()
+         wasPlaying = status === "Playing"
+         position = parseFloat(L[4]) || 0; length = parseFloat(L[5]) || 0
+         panelDirty = true; pArea && pArea.queue_draw()
+     })
+     .catch(() => { title = ""; artist = ""; status = ""; length = 0; panelDirty = true; pArea && pArea.queue_draw() })
+}
+const poll = () => {
+ execAsync(["sh", "-c",
+     `playerctl -l 2>/dev/null | while IFS= read -r p; do ` +
+     `t=$(playerctl -p "$p" metadata --format '{{title}}' 2>/dev/null); ` +
+     `a=$(playerctl -p "$p" metadata --format '{{artist}}' 2>/dev/null); ` +
+     `s=$(playerctl -p "$p" status 2>/dev/null); ` +
+     `printf '%s|;|%s|;|%s|;|%s\\n' "$p" "$t" "$a" "$s"; done`])
+     .then((out) => {
+         players = (out || "").trim().split("\n").filter(Boolean).map((ln) => {
+             const c = ln.split("|;|"); return { name: c[0] || "", title: c[1] || "", artist: c[2] || "", status: c[3] || "" }
+         })
+         if (curPlayer && !players.find((p) => p.name === curPlayer)) curPlayer = ""
+         activeName = curPlayer
+             || players.find((p) => p.status === "Playing" && p.title)?.name
+             || players.find((p) => p.title)?.name
+             || players.find((p) => p.status === "Playing")?.name
+             || players[0]?.name || ""
+         source = activeName ? prettyName(activeName) : ""
+         fetchMeta(activeName)
+     })
+     .catch(() => { players = []; activeName = ""; fetchMeta("") })
+ execAsync(["sh", "-c", "wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null"])
+     .then((o) => { const m = (o || "").match(/([0-9.]+)/); vol = m ? Math.round(parseFloat(m[1]) * 100) : 0; muted = /MUTED/i.test(o || ""); panelDirty = true; pArea && pArea.queue_draw() })
+     .catch(() => {})
+}
+const ctl = (act) => {
+ if (act === "close") { closePlayer(); return }
+ if (act.indexOf("src:") === 0) { curPlayer = act.slice(4); panelDirty = true; poll(); pArea && pArea.queue_draw(); return }
+ execAsync(["sh", "-c", pctl(activeName, act)]).catch(() => {}).then(() => poll())
+}
+
+const txt = (ctx, x, y, s, font, size, col, a, bold = 0, glow = 0) => {
+ ctx.selectFontFace(font, 0, bold); ctx.setFontSize(size)
+ if (glow > 0) { ctx.setOperator(12); ctx.setSourceRGBA(col[0], col[1], col[2], glow * a); ctx.moveTo(x + 0.6, y); ctx.showText(s); ctx.setOperator(2) }
+ ctx.setSourceRGBA(col[0], col[1], col[2], a); ctx.moveTo(x, y); ctx.showText(s)
+}
+const ptext = (ctx, x, yBase, s, family, bold, px, col, a, glow = 0) => {
+ try {
+     const layout = PangoCairo.create_layout(ctx)
+     const desc = Pango.FontDescription.new()
+     desc.set_family(family); desc.set_weight(bold ? Pango.Weight.BOLD : Pango.Weight.NORMAL); desc.set_absolute_size(px * Pango.SCALE)
+     layout.set_font_description(desc); layout.set_text(s, -1)
+     const base = layout.get_baseline() / Pango.SCALE
+     if (glow > 0) { ctx.setOperator(12); ctx.setSourceRGBA(col[0], col[1], col[2], glow * a); ctx.moveTo(x + 0.6, yBase - base); PangoCairo.show_layout(ctx, layout); ctx.setOperator(2) }
+     ctx.setSourceRGBA(col[0], col[1], col[2], a); ctx.moveTo(x, yBase - base); PangoCairo.show_layout(ctx, layout)
+ } catch { txt(ctx, x, yBase, s, family, px, col, a, bold ? 1 : 0, glow) }
+}
+const measure = (ctx, s, font, size, bold = 0) => { ctx.save(); ctx.selectFontFace(font, 0, bold); ctx.setFontSize(size); const w = ctx.textExtents(s).width; ctx.restore(); return w }
+const listIcon = (ctx, x, y, col, a) => {
+ ctx.setSourceRGBA(col[0], col[1], col[2], a); ctx.setLineWidth(2)
+ for (let i = 0; i < 3; i++) { ctx.newPath(); ctx.moveTo(x, y + i * 4); ctx.lineTo(x + 9, y + i * 4); ctx.stroke() }
+}
+const pauseIcon = (ctx, x, y, col, a) => {
+ ctx.setSourceRGBA(col[0], col[1], col[2], a)
+ ctx.rectangle(x, y - 11, 3, 11); ctx.fill(); ctx.rectangle(x + 5.5, y - 11, 3, 11); ctx.fill()
+}
+const playGlyph = (ctx, x, y, col, a) => {
+ ctx.setSourceRGBA(col[0], col[1], col[2], a)
+ ctx.newPath(); ctx.moveTo(x, y - 11); ctx.lineTo(x + 9.5, y - 5.5); ctx.lineTo(x, y); ctx.closePath(); ctx.fill()
+}
+const eqIcon = (ctx, x, y, col, a) => {
+ for (let i = 0; i < 3; i++) {
+     const bh = 3 + (plBars[i] || 0.5) * 9
+     ctx.setOperator(12); ctx.setSourceRGBA(col[0], col[1], col[2], 0.4 * a); ctx.rectangle(x + i * 3.4 - 0.5, y - bh - 1, 3.2, bh + 2); ctx.fill(); ctx.setOperator(2)
+     ctx.setSourceRGBA(col[0], col[1], col[2], a); ctx.rectangle(x + i * 3.4, y - bh, 2.2, bh); ctx.fill()
+ }
+}
+const eqIconGlitch = (ctx, x, y, col, a, g) => {
+ const ox = (Math.random() - 0.5) * 4 * g + 1.5 * g, bars = (sx, c0, c1, c2, al) => { for (let i = 0; i < 3; i++) { const bh = 3 + (plBars[i] || 0.5) * 9; ctx.setSourceRGBA(c0, c1, c2, al); ctx.rectangle(x + i * 3.4 + sx, y - bh, 2.2, bh); ctx.fill() } }
+ ctx.setOperator(12); bars(-ox, 1, 0.12, 0.22, 0.6 * g); bars(ox, 0.2, 1, 1, 0.6 * g); ctx.setOperator(2)
+ bars((Math.random() - 0.5) * 2 * g, col[0], col[1], col[2], a * (0.45 + Math.random() * 0.55))
+}
+const bevelPath = (ctx, x, y, w, h, bev) => { ctx.newPath(); ctx.moveTo(x, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w, y + h - bev); ctx.lineTo(x + w - bev, y + h); ctx.lineTo(x, y + h); ctx.closePath() }
+const techBar = (ctx, x, y, w, h) => { const c = 3.5; ctx.newPath(); ctx.moveTo(x, y + c); ctx.lineTo(x + c, y); ctx.lineTo(x + w - c, y); ctx.lineTo(x + w, y + c); ctx.lineTo(x + w, y + h - c); ctx.lineTo(x + w - c, y + h); ctx.lineTo(x + c, y + h); ctx.lineTo(x, y + h - c); ctx.closePath() }
+const accentBar = (ctx, x, y, w, h, lum) => {
+ const c = 2, cut = 1, topH = 9, dia = 3, tabW = 3, tabD = 2, tabH = 4
+ const path = () => {
+     ctx.newPath()
+     ctx.moveTo(x, y + tabH)
+     ctx.lineTo(x + w - tabW - tabD, y + tabH)
+     ctx.lineTo(x + w - tabW, y)
+     ctx.lineTo(x + w, y)
+     ctx.lineTo(x + w, y + topH)
+     ctx.lineTo(x + w - cut, y + topH + dia)
+     ctx.lineTo(x + w - cut, y + h - topH - dia)
+     ctx.lineTo(x + w, y + h - topH)
+     ctx.lineTo(x + w, y + h)
+     ctx.lineTo(x + c, y + h)
+     ctx.lineTo(x, y + h - c)
+     ctx.closePath()
+ }
+ path(); ctx.setSourceRGBA(cR[0] * lum, cR[1] * lum, cR[2] * lum, 0.95); ctx.fill()
+ path(); ctx.setSourceRGBA(cR[0] * lum * 0.45, cR[1] * lum * 0.45, cR[2] * lum * 0.45, 0.9); ctx.setLineWidth(1.3); ctx.stroke()
+}
+const keyChip = (ctx, x, yc, key, label, boxCol, labelCol, a) => {
+ const ks = 9
+ const ktw = measure(ctx, key, MONO, ks, 1)
+ const kw = Math.max(14, ktw + 9), kh = 15
+ const by = yc - kh / 2
+ ctx.setSourceRGBA(boxCol[0], boxCol[1], boxCol[2], 0.1 * a); ctx.rectangle(x, by, kw, kh); ctx.fill()
+ ctx.setSourceRGBA(boxCol[0], boxCol[1], boxCol[2], 0.92 * a); ctx.setLineWidth(1.1); ctx.rectangle(x, by, kw, kh); ctx.stroke()
+ txt(ctx, x + (kw - ktw) / 2, yc + ks * 0.36, key, MONO, ks, boxCol, a, 1)
+ txt(ctx, x + kw + 6, yc + 3.6, label, TITLE, 9, labelCol, a, 1)
+ return x + kw + 8 + measure(ctx, label, TITLE, 9, 1)
+}
+
+const renderPanel = (ctx) => {
+ const X = 0, Y = 0
+
+ txt(ctx, X + 14, Y + 14, "TRN_TCLAS_B00095", MONO, 9, cR, 0.55, 1)
+
+ const tby = Y + 22, tbh = 50, tx0 = X + 14
+ accentBar(ctx, X + 5, tby + 1, 9, tbh - 2, 1)
+ bevelPath(ctx, tx0, tby, PW - tx0, tbh, 13); ctx.setSourceRGBA(0.22, 0.02, 0.03, 0.4); ctx.fill()
+ bevelPath(ctx, tx0, tby, PW - tx0, tbh, 13); ctx.setOperator(12); ctx.setSourceRGBA(cR[0], cR[1], cR[2], 0.12); ctx.setLineWidth(4); ctx.stroke(); ctx.setOperator(2)
+ bevelPath(ctx, tx0, tby, PW - tx0, tbh, 13); ctx.setSourceRGBA(cR[0], cR[1], cR[2], 0.82); ctx.setLineWidth(1.3); ctx.stroke()
+ ptext(ctx, X + 28, tby + 36, "RADIOPORT", TITLE, true, 26, cC, 0.98, 0.5)
+
+ const csz = CSZ, cx = X + 16, cy = Y + 102, bev = 14
+ accentBar(ctx, X + 7, cy + 1, 9, csz - 2, 0.62)
+ ctx.save(); bevelPath(ctx, cx, cy, csz, csz, bev); ctx.clip()
+ if (coverScaled) { Gdk.cairo_set_source_pixbuf(ctx, coverScaled, cx, cy); ctx.paint() }
+ else { ctx.setSourceRGBA(0.03, 0.07, 0.09, 0.55); ctx.rectangle(cx, cy, csz, csz); ctx.fill() }
+ ctx.restore()
+ bevelPath(ctx, cx, cy, csz, csz, bev); ctx.setSourceRGBA(cR[0], cR[1], cR[2], 0.82); ctx.setLineWidth(1.4); ctx.stroke()
+ ctx.setSourceRGBA(cR[0], cR[1], cR[2], 0.4); ctx.setLineWidth(1)
+ const gn = 5, gsz = 5, gm = 20, gstep = (csz - gm * 2) / (gn - 1)
+ for (let r = 0; r < gn; r++) for (let c = 0; c < gn; c++) ctx.rectangle(cx + gm + c * gstep - gsz / 2, cy + gm + r * gstep - gsz / 2, gsz, gsz)
+ ctx.stroke()
+ const tl = [`IMAGE NAME:  ${trunc((title || "SIGNAL").toUpperCase(), 16)}`, "IMAGE TYPE:  NETRUNNER AUDIO STREAM", "[STREAM CACHED]", "SECTOR ADDR:  00000000"]
+ tl.forEach((s, i) => txt(ctx, cx + 8, cy + csz - 42 + i * 11, s, MONO, 7.5, cR, 0.82, 1))
+
+ const rx = X + 222
+ txt(ctx, rx, cy - 6, status === "Paused" ? "PAUSED" : "NOW PLAYING", MONO, 9, cR, 0.72, 1)
+ ctx.setSourceRGBA(cR[0], cR[1], cR[2], 0.8); ctx.setLineWidth(1.4); ctx.newPath(); ctx.moveTo(rx, cy + 1); ctx.lineTo(X + PW, cy + 1); ctx.stroke()
+ if (title) {
+     ptext(ctx, rx, cy + 40, trunc((artist || source || "—").toUpperCase(), 30), TITLE, true, 21, cR, 0.97, 0.3)
+     ptext(ctx, rx, cy + 62, trunc(title, 38), TITLE, true, 15, cR, 0.9)
+ } else {
+     ptext(ctx, rx, cy + 46, "NOT PLAYING ANY AUDIO", TITLE, true, 17, cR, 0.85, 0.2)
+ }
+
+ txt(ctx, rx, cy + 120, "VOLUME", TITLE, 15, cR, 0.95, 1)
+ txt(ctx, rx + 110, cy + 120, muted ? "MUTE" : `${vol}%`, TITLE, 17, cC, 0.97, 1)
+
+ const pbx = rx, pbw = X + PW - rx, pby = cy + 150, fr = length > 0 ? Math.min(1, position / length) : 0
+ ctx.setSourceRGBA(cC[0], cC[1], cC[2], 0.22); ctx.rectangle(pbx, pby, pbw, 2.5); ctx.fill()
+ ctx.setOperator(12); ctx.setSourceRGBA(cC[0], cC[1], cC[2], 0.5); ctx.rectangle(pbx, pby - 1.5, pbw * fr, 5.5); ctx.fill(); ctx.setOperator(2)
+ ctx.setSourceRGBA(cC[0], cC[1], cC[2], 0.97); ctx.rectangle(pbx, pby, pbw * fr, 2.5); ctx.fill()
+ txt(ctx, pbx, pby + 16, fmt(position), MONO, 9, cC, 0.85, 1)
+ const dur = fmt(length); txt(ctx, X + PW - measure(ctx, dur, MONO, 9, 1), pby + 16, dur, MONO, 9, cC, 0.85, 1)
+
+ const lY = Y + 308, rowH = 42
+ hitRegions = []
+ listIcon(ctx, X + 35, lY + rowH / 2 - 6, cC, 0.55)
+ ptext(ctx, X + 58, lY + rowH / 2 + 5, "TRACKLIST", TITLE, true, 17, cC, 0.82)
+ const srcs = players.filter((p) => p.title || p.status === "Playing")
+ const shown = Math.min(srcs.length + 1, 7)
+ iconPos = null
+ srcs.forEach((p, i) => {
+     if (i >= 5) return
+     const ry = lY + (i + 1) * rowH, rh = rowH - 4
+     const sel = p.name === activeName
+     const nm = trunc(`${freqOf(i)}  ${(p.title || prettyName(p.name))}${p.artist ? " - " + p.artist : ""}`.toUpperCase(), 30)
+     const hov = i === hoverIdx ? hoverA : 0
+     if (sel) {
+         bevelPath(ctx, X + 24, ry, PW - 40, rh, 11); ctx.setSourceRGBA(cC[0], cC[1], cC[2], 0.1); ctx.fill()
+         bevelPath(ctx, X + 24, ry, PW - 40, rh, 11); ctx.setOperator(12); ctx.setSourceRGBA(cC[0], cC[1], cC[2], 0.3); ctx.setLineWidth(4); ctx.stroke(); ctx.setOperator(2)
+         bevelPath(ctx, X + 24, ry, PW - 40, rh, 11); ctx.setSourceRGBA(cC[0], cC[1], cC[2], 1); ctx.setLineWidth(1.6); ctx.stroke()
+         iconPos = { x: X + 36, y: ry + rh / 2 + 5 }
+         ptext(ctx, X + 58, ry + rh / 2 + 5, nm, TITLE, true, 16, cC, 0.98, 0.28)
+     } else {
+         if (hov > 0.02) { bevelPath(ctx, X + 24, ry, PW - 40, rh, 11); ctx.setSourceRGBA(cC[0], cC[1], cC[2], 0.07 * hov); ctx.fill() }
+         listIcon(ctx, X + 35, ry + rh / 2 - 6, cC, 0.5 + 0.35 * hov)
+         ptext(ctx, X + 58, ry + rh / 2 + 5, nm, TITLE, false, 16, cC, 0.62 + 0.32 * hov, 0)
+     }
+     hitRegions.push({ x: X + 24, y: ry, w: PW - 40, h: rowH, act: "src:" + p.name, srcIdx: i })
+ })
+ const sbX = X + PW - 5, sbH = rowH * shown - 8
+ ctx.setOperator(12)
+ ctx.setSourceRGBA(cR[0], cR[1], cR[2], 0.45); ctx.rectangle(sbX - 3, lY, 9, sbH); ctx.fill()
+ ctx.setSourceRGBA(cR[0], cR[1], cR[2], 0.4); ctx.rectangle(sbX - 1, lY, 5, sbH); ctx.fill()
+ ctx.setOperator(2)
+ ctx.setSourceRGBA(cR[0], cR[1], cR[2], 1); ctx.rectangle(sbX, lY, 3, sbH); ctx.fill()
+
+ ctx.setSourceRGBA(cR[0], cR[1], cR[2], 0.4); ctx.setLineWidth(1); ctx.newPath(); ctx.moveTo(X, PH - 50); ctx.lineTo(X + PW, PH - 50); ctx.stroke()
+ const lg = ["// AUTHORIZED OPS ONLY", "// ACCESS LOGGED &", "// TRACED TO RADIOPORT"]
+ lg.forEach((s, i) => txt(ctx, X + 6, PH - 24 + i * 8, s, MONO, 7, cR, 0.5, 1))
+ const chips = [["←", "PREVIOUS TRACK", "previous"], ["SPACE", "PLAY/STOP TRACK", "play-pause"], ["→", "NEXT TRACK", "next"], ["ESC", "CLOSE RADIOPORT", "close"]]
+ const cw = chips.map(([k, l]) => Math.max(14, measure(ctx, k, MONO, 9, 1) + 9) + 6 + measure(ctx, l, TITLE, 9, 1))
+ const totalW = cw.reduce((a, b) => a + b, 0) + (chips.length - 1) * 9
+ let bx = X + PW - totalW - 2
+ const byc = PH - 14
+ chips.forEach(([k, l, act]) => { const sx = bx; bx = keyChip(ctx, bx, byc, k, l, cC, cR, 0.95); hitRegions.push({ x: sx, y: byc - 11, w: bx - sx, h: 20, act }); bx += 9 })
+}
+
+const drawActiveIcon = (ctx, x, y, al) => {
+ const pt = Date.now() - playStart
+ if (status === "Paused") pauseIcon(ctx, x, y, cC, 0.95 * al)
+ else if (status === "Playing" && pt < 300) playGlyph(ctx, x, y, cC, 0.95 * al)
+ else if (status === "Playing" && pt < 420) eqIconGlitch(ctx, x, y, cC, 0.95 * al, (420 - pt) / 120)
+ else eqIcon(ctx, x, y, cC, 0.95 * al)
+}
+
+const renderToCache = () => {
+ if (!panelSurf) panelSurf = new Cairo.ImageSurface(Cairo.Format.ARGB32, PW, PH)
+ const c = new Cairo.Context(panelSurf)
+ c.setOperator(0); c.paint(); c.setOperator(2)
+ renderPanel(c)
+ panelSurf.flush()
+ panelDirty = false
+}
+
+const draw = (ctx, aw, ah) => {
+ ctx.setOperator(0); ctx.paint(); ctx.setOperator(2)
+ if (intro <= 0.002 && !visible) return
+ const sw = aw || SCREEN_WIDTH, sh = ah || SCREEN_HEIGHT
+ const e = intro, ease = e * e * (3 - 2 * e)
+ ctx.setSourceRGBA(0, 0, 0, 0.6 * ease); ctx.rectangle(0, 0, sw, sh); ctx.fill()
+ const X0 = Math.round((sw - PW) / 2), Y0 = Math.round((sh - PH) / 2)
+ const sc = 0.96 + 0.04 * ease
+ if (!panelSurf || (panelDirty && intro === introTarget)) renderToCache()
+ ctx.save()
+ ctx.translate(X0 + PW / 2, Y0 + PH / 2 + (1 - ease) * 20); ctx.scale(sc, sc); ctx.translate(-PW / 2, -PH / 2)
+ ctx.setSourceSurface(panelSurf, 0, 0); ctx.paintWithAlpha(ease)
+ if (iconPos) drawActiveIcon(ctx, iconPos.x, iconPos.y, ease)
+ ctx.restore()
+ if (e < 0.999) {
+     const sy = Y0 + ease * PH
+     ctx.setOperator(12); ctx.setSourceRGBA(cC[0], cC[1], cC[2], (1 - ease) * 0.7); ctx.setLineWidth(2)
+     ctx.newPath(); ctx.moveTo(X0, sy); ctx.lineTo(X0 + PW, sy); ctx.stroke(); ctx.setOperator(2)
+ }
+}
+
+const pip = (px, py, r) => px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h
+
+const startTimers = () => {
+ if (!pollT) pollT = interval(1500, poll)
+ if (!animT) animT = interval(33, () => {
+     tick++
+     const playing = status === "Playing"
+     let redraw = false
+     if (intro !== introTarget) {
+         const sp = introTarget > intro ? 0.16 : 0.2
+         if (Math.abs(introTarget - intro) <= sp) intro = introTarget
+         else intro += Math.sign(introTarget - intro) * sp
+         redraw = true
+     }
+     if (introTarget === 0 && intro <= 0.001) { intro = 0; if (pWin) pWin.visible = false; stopTimers(); return }
+     if (playing) {
+         if (length > 0) { const np = Math.min(length, position + 33000); if (fmt(np) !== fmt(position)) { panelDirty = true; redraw = true }; position = np }
+         if (tick % 3 === 0) { for (let i = 0; i < plBars.length; i++) plBars[i] = 0.18 + Math.random() * 0.82; redraw = true }
+         if (Date.now() - playStart < 450) redraw = true
+     }
+     const ht = hoverIdx >= 0 ? 1 : 0
+     if (Math.abs(ht - hoverA) > 0.015) { hoverA += (ht - hoverA) * 0.28; panelDirty = true; redraw = true }
+     else if (hoverA !== ht) { hoverA = ht; panelDirty = true; redraw = true }
+     if (redraw) pArea && pArea.queue_draw()
+ })
+}
+const stopTimers = () => { if (pollT) { pollT.cancel(); pollT = null } if (animT) { animT.cancel(); animT = null } }
+
+export const togglePlayer = () => {
+ if (!visible) {
+     visible = true; introTarget = 1
+     try { pWin.gdkmonitor = activeMonitor() } catch {}
+     pWin.visible = true; try { pWin.present?.() } catch {}
+     poll(); startTimers()
+ } else closePlayer()
+ pArea && pArea.queue_draw()
+}
+export const closePlayer = () => { if (!visible && introTarget === 0) return; visible = false; introTarget = 0; startTimers() }
+export const isPlayerOpen = () => visible
+
+export const PlayerWindow = () => {
+ pArea = DrawingArea({})
+ pArea.connect("draw", (_w, ctx) => { const a = pArea.get_allocated_width?.() || 0, h = pArea.get_allocated_height?.() || 0; draw(ctx, a, h); return false })
+ const evt = EventBox({ child: pArea })
+ try { evt.add_events(Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.POINTER_MOTION_MASK | Gdk.EventMask.LEAVE_NOTIFY_MASK) } catch {}
+ const toLocal = (e) => { let x = 0, y = 0; try { const c = e.get_coords?.(); if (c) { x = c[1]; y = c[2] } } catch {}; const aw = pArea.get_allocated_width?.() || SCREEN_WIDTH, ah = pArea.get_allocated_height?.() || SCREEN_HEIGHT; return [x - Math.round((aw - PW) / 2), y - Math.round((ah - PH) / 2)] }
+ evt.connect("button-press-event", (_w, e) => {
+     const [lx, ly] = toLocal(e)
+     if (lx < 0 || ly < 0 || lx > PW || ly > PH) { closePlayer(); return true }
+     const r = hitRegions.find((q) => pip(lx, ly, q)); if (r) ctl(r.act)
+     return true
+ })
+ evt.connect("motion-notify-event", (_w, e) => {
+     const [lx, ly] = toLocal(e)
+     const r = hitRegions.find((q) => q.srcIdx !== undefined && pip(lx, ly, q))
+     const ni = r ? r.srcIdx : -1
+     if (ni !== hoverIdx) { hoverIdx = ni; panelDirty = true; pArea && pArea.queue_draw() }
+     return false
+ })
+ evt.connect("leave-notify-event", () => { if (hoverIdx !== -1) { hoverIdx = -1; panelDirty = true; pArea && pArea.queue_draw() } return false })
+ pWin = Window({
+     name: "player", namespace: "radioport", className: "aug player",
+     anchor: Anchor.TOP | Anchor.BOTTOM | Anchor.LEFT | Anchor.RIGHT,
+     layer: Layer.OVERLAY, exclusivity: Exclusivity.IGNORE, keymode: Keymode.ON_DEMAND,
+     visible: false, child: evt,
+ })
+ pWin.connect("key-press-event", (_w, e) => {
+     let k = 0; try { const r = e.get_keyval?.(); k = r ? r[1] : e.keyval } catch { k = e.keyval }
+     if (k === Gdk.KEY_Escape) closePlayer()
+     else if (k === Gdk.KEY_space) ctl("play-pause")
+     else if (k === Gdk.KEY_Left) ctl("previous")
+     else if (k === Gdk.KEY_Right) ctl("next")
+     return true
+ })
+ return pWin
+}

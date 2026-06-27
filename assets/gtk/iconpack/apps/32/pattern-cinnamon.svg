@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg version="1.1" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+<metadata>
+<rdf:RDF>
+<cc:Work rdf:about="">
+<dc:format>image/svg+xml</dc:format>
+<dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+<dc:title/>
+</cc:Work>
+</rdf:RDF>
+</metadata>
+<defs>
+<linearGradient id="e" x1="8.4461" x2="24.603" y1="6.2689" y2="24.571" gradientUnits="userSpaceOnUse">
+<stop stop-opacity=".2088" offset="0"/>
+<stop stop-opacity="0" offset="1"/>
+</linearGradient>
+<linearGradient id="c" x1="30" x2=".14963" y1="30" y2=".069732" gradientUnits="userSpaceOnUse">
+<stop stop-color="#da6125" offset="0"/>
+<stop stop-color="#e17d4a" offset="1"/>
+</linearGradient>
+<linearGradient id="d" x1="7.8488" x2="14.108" y1="3.5121" y2="14.183" gradientUnits="userSpaceOnUse">
+<stop stop-opacity=".2088" offset="0"/>
+<stop stop-opacity="0" offset="1"/>
+</linearGradient>
+</defs>
+<rect x="2" y="2" width="28" height="28" rx="4" fill="url(#c)"/>
+<path d="m2.0139 25v1c0 2.216 1.784 4 4 4h20c2.216 0 4-1.784 4-4v-1c0 2.216-1.784 4-4 4h-20c-2.216 0-4-1.784-4-4z" fill="#292c2f" opacity=".2"/>
+<path d="m22.554 9.003s2.9064 9.7686 1.9845 10.503c-0.92196 0.73463-8.5381-7.0718-8.5381-7.0718l-7.0757 10.56 7.0357 7.0062c5.1802 0.04871 9.1509-0.02585 9.1509-0.02585 2.2335-0.16301 4.6437-0.43564 4.8896-4.6365l-1e-6 -8.9195z" fill="url(#e)"/>
+<path d="m22.554 9.003s-6.6418-3.9013-12.273-0.266c-5.6315 3.6353-1.3564 14.257-1.3564 14.257l6.9754 0.64193c13.304 1.1971 9.0471 3.5176 8.9592-6.4244z" fill="url(#d)"/>
+<path d="m15.745 6.2358c-5.3924 0-9.7642 4.3718-9.7642 9.7642 0 5.3932 4.3718 9.7642 9.7642 9.7642 5.3932 0 9.7642-4.3709 9.7642-9.7642 0-5.3924-4.3709-9.7642-9.7642-9.7642zm0 1.6649c4.4737 0 8.0992 3.6255 8.0992 8.0992 0 0.68807-0.09387 1.3521-0.25538 1.99l-3.8523-4.2818-4.9252 5.6034 2.3764-4.7544-1.1874-2.1226-7.0014 8.0461c-0.85414-1.2835-1.3532-2.8237-1.3532-4.4808 0-4.4737 3.6255-8.0992 8.0992-8.0992z" fill="#fff" stroke-width=".84906"/>
+</svg>

@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# peek at the desktop (SUPER+D). 
+set -euo pipefail
+STATE="${XDG_RUNTIME_DIR:-/tmp}/hypr-peek-state"
+SPECIAL="special:peek"
+if [[ -s "$STATE" ]]; then
+    while IFS=$'\t' read -r addr ws; do
+        [[ -n "$addr" && -n "$ws" ]] && hyprctl dispatch movetoworkspacesilent "${ws},address:${addr}" >/dev/null 2>&1 || true
+    done < "$STATE"
+    rm -f "$STATE"
+else
+    hyprctl clients -j | jq -r '.[] | select(.workspace.id >= 0) | "\(.address)\t\(.workspace.id)"' > "$STATE"
+    if [[ -s "$STATE" ]]; then
+        while IFS=$'\t' read -r addr ws; do
+            [[ -n "$addr" ]] && hyprctl dispatch movetoworkspacesilent "${SPECIAL},address:${addr}" >/dev/null 2>&1 || true
+        done < "$STATE"
+    else
+        rm -f "$STATE"   
+    fi
+fi

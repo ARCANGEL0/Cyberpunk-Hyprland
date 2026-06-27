@@ -1,0 +1,392 @@
+#!/usr/bin/env bash
+DIR=$(cd "$(dirname "$0")" && pwd)
+AUDIO="$DIR/../assets/audio"
+HUM_LOCK="/tmp/overkill_hum.lock"
+play_snd() {
+    setsid -f sh -c "play -q -v $2 \"$AUDIO/$1\" 2>/dev/null || mpv --no-video --really-quiet --volume=$3 \"$AUDIO/$1\" 2>/dev/null" >/dev/null 2>&1
+}
+start_hum() { # loop the kiroshi_menu ambience at 200%, keeps going until the lockfile is removed
+    touch "$HUM_LOCK"
+    setsid -f sh -c "while [ -e '$HUM_LOCK' ]; do play -q -v 2.0 \"$AUDIO/kiroshi_menu.ogg\" 2>/dev/null || { mpv --no-video --really-quiet --volume=200 \"$AUDIO/kiroshi_menu.ogg\" 2>/dev/null || break; }; done" >/dev/null 2>&1
+}
+stop_hum() {
+    rm -f "$HUM_LOCK"
+    pkill -f 'kiroshi_menu[.]ogg' 2>/dev/null
+}
+
+case "${1:-enter}" in
+  enter)
+    echo "KILL MODE ON"
+    play_snd kiroshi_on.ogg 1.5 150   # the "powering on" blip
+    start_hum                          # kick off the looping menu ambience (200% vol)
+### dump the overlay's python script to a temp file and run it (the whole UI lives below)
+    cat > /tmp/overkill.py << 'PYEOF'
+#!/usr/bin/env python3
+import gi, signal, math, cairo, subprocess, random, os, socket
+gi.require_version('Gtk', '3.0')
+gi.require_version('Gdk', '3.0')
+gi.require_version('GtkLayerShell', '0.1')
+from gi.repository import Gtk, Gdk, GtkLayerShell, GLib
+TAU = math.pi * 2
+RED = (0.97, 0.16, 0.19)
+CY  = (0.42, 0.83, 0.86)
+CC  = (0.50, 0.93, 0.98)   # the brighter cyan used on the banner card
+GLYPHS = "0123456789ABCDEFGHJKLMNPQRSTUVWXYZ#%/<>=*"
+CAL_HUD = 0.30       # how long the cyan center HUD takes to draw itself in
+BANNER_INTRO = 0.5   # how long the bottom banner takes to slam in
+def clamp(v, a, b): return a if v < a else b if v > b else v
+def ease_out_cubic(x): return 1 - (1 - x) ** 3
+# ask Hyprland for the cursor position straight over its socket -- this is way cheaper
+# than spawning hyprctl 30 times a second like the old version did.
+_HIS = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE", "")
+_XRD = os.environ.get("XDG_RUNTIME_DIR", "")
+def _hypr_sock():
+    for p in ("%s/hypr/%s/.socket.sock" % (_XRD, _HIS), "/tmp/hypr/%s/.socket.sock" % _HIS):
+        if _HIS and os.path.exists(p): return p
+    return None
+_SOCK = _hypr_sock()
+def query_cursor():
+    if _SOCK:
+        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM); s.settimeout(0.2)
+        try:
+            s.connect(_SOCK); s.sendall(b"cursorpos")
+            data = b""
+            while True:
+                chunk = s.recv(64)
+                if not chunk: break
+                data += chunk
+            return data.decode().strip()
+        finally:
+            s.close()
+    return subprocess.check_output(["hyprctl", "cursorpos"], text=True).strip()
+def stroke_partial(cr, pts, frac):
+    if frac <= 0.001: return
+    seg = []; total = 0.0
+    for i in range(len(pts) - 1):
+        l = math.hypot(pts[i+1][0]-pts[i][0], pts[i+1][1]-pts[i][1]); seg.append(l); total += l
+    if total == 0: return
+    target = total * frac; acc = 0.0
+    cr.new_path(); cr.move_to(*pts[0])
+    for i in range(len(pts) - 1):
+        l = seg[i]
+        if acc + l <= target:
+            cr.line_to(*pts[i+1]); acc += l
+        else:
+            tt = (target - acc) / l
+            cr.line_to(pts[i][0]+(pts[i+1][0]-pts[i][0])*tt, pts[i][1]+(pts[i+1][1]-pts[i][1])*tt)
+            break
+    cr.stroke()
+def arc_seg(cr, x, y, r, c_ang, half, rot, dp):
+    a0 = c_ang - half + rot; a1 = c_ang + half + rot
+    cr.new_path(); cr.arc(x, y, r, a0, a0 + (a1 - a0) * dp); cr.stroke()
+
+def tri(cr, x, y, size, up):
+    cr.new_path()
+    if up:
+        cr.move_to(x, y - size); cr.line_to(x - size*0.9, y + size*0.7); cr.line_to(x + size*0.9, y + size*0.7)
+    else:
+        cr.move_to(x, y + size); cr.line_to(x - size*0.9, y - size*0.7); cr.line_to(x + size*0.9, y - size*0.7)
+    cr.close_path(); cr.fill()
+
+# THE CURSOR itself -- i hand-ported the CP2077 triskelion emblem from its SVG, i tried to convert as much as possible the original SVG trnsforms here
+# draws a custom crosshair like the game, as the mouse instead of the normal pointer.
+EBR = (1.0, 0.231, 0.361)     # #ff3b5c, the bright outline color
+EDK = (0.478, 0.114, 0.169)   # #7a1d2b, the dark inner chevrons
+def _rotpt(px, py, deg):
+    a = math.radians(deg); ca = math.cos(a); sa = math.sin(a)
+    dx = px - 100; dy = py - 100
+    return (100 + dx*ca - dy*sa, 100 + dx*sa + dy*ca)
+def draw_emblem(cr, x, y, R, t, rev=1.0, lw=1.7):
+    rv = ease_out_cubic(clamp(rev, 0, 1))           
+    if rv <= 0.01: return
+    R = R * (0.45 + 0.55 * rv); A = rv
+    sc = R / 85.0
+    grot = t * 0.4
+    cg = math.cos(grot); sg = math.sin(grot)
+    po = math.sin(t * 3.4) * 7.0                  
+    def P(px, py):
+        dx = (px - 100)*sc; dy = (py - 100)*sc
+        return (x + dx*cg - dy*sg, y + dx*sg + dy*cg)
+    def GP(px, py, deg):
+        sx, sy = _rotpt(px, py, deg); return P(sx, sy)
+    def poly(pts):
+        cr.new_path(); cr.move_to(*pts[0])
+        for p in pts[1:]: cr.line_to(*p)
+        cr.stroke()
+    spokes = [[GP(100, 75 - po, d), GP(100, 15 - po, d)] for d in (0, 120, 240)]
+    caps = [[GP(75.5, 54.5, d), GP(82, 46, d), GP(118, 46, d), GP(124.5, 54.5, d)] for d in (60, 180, 300)]
+    chev = [[GP(83, 75, d), GP(100, 85, d), GP(117, 75, d)] for d in (60, 180, 300)]
+    cr.set_line_cap(cairo.LineCap.ROUND); cr.set_line_join(cairo.LineJoin.ROUND)
+    cr.set_operator(cairo.OPERATOR_ADD); cr.set_source_rgba(*EBR, 0.10*A); cr.set_line_width(lw*4)
+    for g in spokes: poly(g)
+    for g in caps: poly(g)
+    cr.set_operator(cairo.OPERATOR_OVER)
+    # the dark inner chevrons -- sharp (miter) corners, no glow on these
+    cr.set_source_rgba(*EDK, 0.95*A); cr.set_line_width(lw*0.9); cr.set_line_join(cairo.LineJoin.MITER)
+    for g in chev: poly(g)
+    # now the bright spokes + caps on top
+    cr.set_line_join(cairo.LineJoin.ROUND); cr.set_source_rgba(*EBR, 0.98*A); cr.set_line_width(lw)
+    for g in spokes: poly(g)
+    for g in caps: poly(g)
+    # little dot in the very center of the corsshair
+    cr.set_source_rgba(*EBR, 1.0*A)
+    cr.new_path(); cr.arc(x, y, max(1.8, 2.2*sc), 0, TAU); cr.fill()
+
+# the dark red vignette that dims the whole screen.
+# bilinear smoothing. the gradient is soft anyway so your eye can't tell, but it's
+# ~16x fewer gradient calculations per frame -- the full-size radial fill was eating
+# most of the CPU before i did this.
+_VCACHE = {"surf": None, "w": 0, "h": 0}
+def draw_vignette(cr, W, H, t, rev=1.0):
+    f = clamp(rev / 0.5, 0, 1)
+    if f <= 0.01: return
+    pulse = 0.94 + 0.06 * math.sin(t * 2.0)
+    sw = max(2, int(W // 4)); sh = max(2, int(H // 4))
+    if _VCACHE["surf"] is None or _VCACHE["w"] != sw or _VCACHE["h"] != sh:
+        _VCACHE["surf"] = cairo.ImageSurface(cairo.FORMAT_ARGB32, sw, sh)
+        _VCACHE["w"] = sw; _VCACHE["h"] = sh
+    surf = _VCACHE["surf"]
+    c2 = cairo.Context(surf)
+    c2.set_operator(cairo.OPERATOR_CLEAR); c2.paint(); c2.set_operator(cairo.OPERATOR_OVER)
+    cx, cy = sw / 2, sh / 2; reach = math.hypot(sw, sh) / 2
+    g = cairo.RadialGradient(cx, cy, reach * 0.16, cx, cy, reach * 0.98)
+    g.add_color_stop_rgba(0.0, 0.02, 0.0, 0.01, 0.50 * f)
+    g.add_color_stop_rgba(0.50, 0.06, 0.0, 0.01, 0.72 * f)
+    g.add_color_stop_rgba(1.0, 0.19, 0.0, 0.03, 0.97 * pulse * f)
+    c2.set_source(g); c2.rectangle(0, 0, sw, sh); c2.fill()
+    surf.flush()
+    cr.save()
+    cr.scale(W / sw, H / sh)
+    cr.set_source_surface(surf, 0, 0)
+    cr.get_source().set_filter(cairo.FILTER_BILINEAR)
+    cr.paint()
+    cr.restore()
+
+# the center HUD -- the cyan Kiroshi-style scanner that draws itself in piece by piece
+def draw_hud(cr, W, H, rev):
+    cx, cy = W / 2, H / 2; a = 0.48
+    cal = clamp(rev / 0.7, 0, 1)   # finish the HUD a touch before the banner does
+    def stg(s, e): return ease_out_cubic(clamp((cal - s) / (e - s), 0, 1))
+    p_ctr, p_wing, p_brk, p_trough, p_tick, p_gauge = (
+        stg(0, 0.4), stg(0.15, 0.55), stg(0.3, 0.65), stg(0.4, 0.8), stg(0.55, 0.9), stg(0.7, 1.0))
+    cr.set_line_cap(cairo.LineCap.ROUND); cr.set_line_join(cairo.LineJoin.ROUND)
+
+    cr.set_source_rgba(*CY, a); cr.set_line_width(1.5)
+    stroke_partial(cr, [(cx, cy - 20), (cx, cy - 74)], p_ctr)
+    stroke_partial(cr, [(cx, cy + 20), (cx, cy + 74)], p_ctr)
+    if p_ctr > 0.2:
+        cr.set_source_rgba(*CY, a * clamp((p_ctr-0.2)/0.3, 0, 1))
+        cr.new_path(); cr.arc(cx, cy, 2.2, 0, TAU); cr.fill()
+    ta = a * clamp((p_ctr - 0.6) / 0.4, 0, 1)
+    if ta > 0:
+        cr.set_source_rgba(*CY, ta); tri(cr, cx, cy - 104, 6, up=False); tri(cr, cx, cy + 104, 6, up=True)
+
+    bx_off = W * 0.135
+    cr.set_source_rgba(*CY, a); cr.set_line_width(1.5)
+    for side in (-1, 1):
+        bx = cx + side * bx_off
+        pts = [(bx, cy + 30), (bx, cy - 12), (bx + side*3, cy - 27), (bx + side*9, cy - 32), (bx + side*18, cy - 34)]
+        stroke_partial(cr, pts, p_brk)
+    if p_brk > 0.7:
+        cr.select_font_face("monospace", 0, 0); cr.set_font_size(13)
+        cr.set_source_rgba(*CY, a*0.9 * clamp((p_brk-0.7)/0.3, 0, 1))
+        for side in (-1, 1):
+            bx = cx + side * bx_off
+            cr.move_to((bx + 8) if side < 0 else (bx - 40), cy - 16); cr.show_text("000")
+
+    cr.set_source_rgba(*CY, a*0.42); cr.set_line_width(1.3)
+    for side in (-1, 1):
+        stroke_partial(cr, [(cx + side*80, cy - 118), (cx + side*272, cy - 198)], p_wing)
+
+    cr.set_source_rgba(*CY, a*0.7); cr.set_line_width(1.3)
+    tw = W * 0.26; dipw = 64; y0 = cy + 50; y1 = cy + 68
+    stroke_partial(cr, [(cx, y1), (cx - dipw, y1), (cx - dipw - 18, y0), (cx - tw, y0)], p_trough)
+    stroke_partial(cr, [(cx, y1), (cx + dipw, y1), (cx + dipw + 18, y0), (cx + tw, y0)], p_trough)
+
+    cr.set_source_rgba(*CY, a*0.65); cr.set_line_width(1.2)
+    gx = W/2 - 80; tick_outer = gx - 26; tick_inner = W * 0.205; n = 9
+    for side in (-1, 1):
+        for i in range(n):
+            if p_tick * (n + 0.5) < i + 1: continue
+            f = i / (n - 1)
+            xx = cx + side*(tick_inner + f*(tick_outer - tick_inner))
+            hh = 9 if i % 2 == 0 else 5
+            cr.new_path(); cr.move_to(xx, cy - hh); cr.rel_line_to(0, hh); cr.stroke()
+
+    for side in (-1, 1):
+        gx2 = cx + side*(W/2 - 80)
+        cr.set_source_rgba(*CY, a); cr.set_line_width(1.4)
+        cr.new_path(); cr.arc(gx2, cy, 10, math.radians(35), math.radians(35) + TAU*0.78 * p_gauge); cr.stroke()
+
+def glitch_type(cr, x, y, full, prog, size, alpha, col):
+    if prog <= 0: return
+    cr.select_font_face("JetBrains Mono", 0, 1); cr.set_font_size(size)
+    adv = cr.text_extents("M")[4]
+    n = len(full); shown = prog * n
+    for i in range(n):
+        ch = full[i]
+        if ch == " ": continue
+        if i >= shown:
+            if i < shown + 1.6: ch = GLYPHS[int(random.random()*len(GLYPHS))]
+            else: continue
+        elif random.random() < 0.035: ch = GLYPHS[int(random.random()*len(GLYPHS))]
+        head = (shown - 1 <= i < shown + 1.6)
+        cxp = x + i*adv; jx = random.uniform(-1, 1) if head else 0
+        cr.set_source_rgba(min(1, col[0]+0.5), min(1, col[1]+0.4), min(1, col[2]+0.4), alpha*0.4)
+        cr.move_to(cxp - 1.5 + jx, y); cr.show_text(ch)
+        c0 = min(1, col[0]*1.4) if head else col[0]; c1 = min(1, col[1]*1.4) if head else col[1]; c2 = min(1, col[2]*1.4) if head else col[2]
+        cr.set_source_rgba(c0, c1, c2, alpha); cr.move_to(cxp + jx, y); cr.show_text(ch)
+
+def draw_banner(cr, W, H, rev):
+    cp = clamp(rev, 0, 1) * 0.18   # slams in as it reveals, and plays in reverse on the way out
+    load = 1.0 if cp >= 0.10 else cp / 0.10
+    if load <= 0.001: return
+    FRW = 262; FRH = 30; c = 9
+    FRX = W/2 - FRW/2; FRY = H - 120
+    lineFrac = min(1, cp / 0.06)
+    closeFrac = min(1, max(0, (cp - 0.06) / 0.06))
+    contentFrac = min(1, max(0, (cp - 0.10) / 0.08))
+    def card():
+        cr.new_path()
+        cr.move_to(FRX + c, FRY); cr.line_to(FRX + FRW, FRY)
+        cr.line_to(FRX + FRW, FRY + FRH - c); cr.line_to(FRX + FRW - c, FRY + FRH)
+        cr.line_to(FRX, FRY + FRH); cr.line_to(FRX, FRY + c); cr.close_path()
+    lw = 1.8
+    cr.set_source_rgba(*CC, 0.95*load); cr.set_line_width(lw); cr.set_line_cap(cairo.LineCap.ROUND)
+    td = (FRW - c) * lineFrac
+    cr.new_path(); cr.move_to(FRX + c, FRY); cr.line_to(FRX + c + td, FRY); cr.stroke()
+    bd = (FRW - c) * lineFrac
+    cr.new_path(); cr.move_to(FRX + FRW - c, FRY + FRH); cr.line_to(FRX + FRW - c - bd, FRY + FRH); cr.stroke()
+    if closeFrac > 0:
+        rv = (FRH - c) * closeFrac
+        cr.new_path(); cr.move_to(FRX + FRW, FRY); cr.line_to(FRX + FRW, FRY + rv); cr.stroke()
+        cr.new_path(); cr.move_to(FRX, FRY + FRH); cr.line_to(FRX, FRY + FRH - rv); cr.stroke()
+        if closeFrac > 0.3:
+            cf = min(1, (closeFrac - 0.3) / 0.7)
+            cr.new_path(); cr.move_to(FRX, FRY + c - c*cf); cr.line_to(FRX + c*cf, FRY); cr.stroke()
+            cr.new_path(); cr.move_to(FRX + FRW - c*cf, FRY + FRH); cr.line_to(FRX + FRW, FRY + FRH - c + c*cf); cr.stroke()
+    cr.set_operator(cairo.OPERATOR_ADD)
+    cr.set_source_rgba(*CC, 0.07*load); cr.set_line_width(lw*5); cr.set_line_cap(cairo.LineCap.ROUND)
+    card(); cr.stroke()
+    cr.set_operator(cairo.OPERATOR_OVER)
+    if closeFrac > 0.6:
+        fa = min(1, (closeFrac - 0.6) / 0.4) * load
+        cr.set_source_rgba(0.01, 0.04, 0.05, 0.82*fa); card(); cr.fill()
+        cr.set_source_rgba(*CC, 0.9*fa); cr.rectangle(FRX + 4, FRY + 5, 2, FRH - 10); cr.fill()
+    if contentFrac > 0:
+        cA = contentFrac * load
+        glitch_type(cr, FRX + 15, FRY + 20, "/// CLICK ON AN APP TO TERMINATE", cA, 10, 0.97, CC)
+        if 0.12 < cp < 0.22 and int((cp - 0.12) * 90) % 2 == 0:
+            cr.set_source_rgba(0.8, 0.97, 1, 0.12*cA); card(); cr.fill()
+
+class W(Gtk.Window):
+    def __init__(s):
+        super().__init__(type=Gtk.WindowType.TOPLEVEL)
+        s.set_title("overkill"); s.set_wmclass("overkill", "Overkill")
+        s.set_decorated(False); s.set_accept_focus(False)
+        s.set_app_paintable(True)
+        s.mx = 0; s.my = 0; s.t = 0.0
+        s.rev = 0.0; s.dir = 1            # reveal goes 0..1; dir +1 = animating in, -1 = animating out
+        s.intro = 0.45; s.outro = 0.40    # intro/outro length, in seconds
+        screen = s.get_screen()
+        v = screen.get_rgba_visual()
+        if v: s.set_visual(v)
+        GtkLayerShell.init_for_window(s)
+        L = GtkLayerShell.Layer; E = GtkLayerShell.Edge
+        GtkLayerShell.set_layer(s, L.OVERLAY)
+        for e in (E.LEFT, E.RIGHT, E.TOP, E.BOTTOM): GtkLayerShell.set_anchor(s, e, 1)
+        GtkLayerShell.set_exclusive_zone(s, -1)
+        GtkLayerShell.set_keyboard_interactivity(s, 1)
+        s.connect("realize", s.on_realize)
+        s.connect("draw", s.on_draw)
+        s.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+        s.connect("button-press-event", s.on_click)
+        s.show_all()
+    def on_realize(s, *a):
+        try:
+            out = query_cursor()
+            x, y = out.split(", "); s.mx, s.my = float(x), float(y)
+        except Exception:
+            pass
+        # hide the real mouse cursor while kill mode is on, so all you see is the drawn scope
+        try:
+            win = s.get_window()
+            if win:
+                cur = None
+                try: cur = Gdk.Cursor.new_from_name(s.get_display(), "none")
+                except Exception: cur = None
+                if cur is None:
+                    cur = Gdk.Cursor.new_for_display(s.get_display(), Gdk.CursorType.BLANK_CURSOR)
+                win.set_cursor(cur)
+        except Exception:
+            pass
+        # when the script sends us SIGUSR1, play the animation backwards and then close 
+        GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGUSR1, s.start_outro)
+        GLib.timeout_add(33, s.poll_mouse)
+        GLib.timeout_add(33, s.animate)
+    def on_click(s, w, e):
+        if e.button == 1:
+            try: subprocess.Popen(["bash", os.path.expanduser("~/.config/hypr/themes/cyberpunk/scripts/overkill"), "kill"])
+            except Exception: pass
+        return True
+    def start_outro(s):
+        s.dir = -1
+        return True
+    def poll_mouse(s):
+        try:
+            out = query_cursor()
+            x, y = out.split(", "); s.mx, s.my = float(x), float(y)
+        except Exception:
+            pass
+        return True
+    def animate(s):
+        s.t += 0.033
+        s.rev += 0.033 / (s.intro if s.dir > 0 else s.outro) * s.dir
+        if s.rev >= 1.0: s.rev = 1.0
+        if s.rev <= 0.0 and s.dir < 0:
+            Gtk.main_quit(); return False
+        s.queue_draw()
+        return True
+    def on_draw(s, w, cr):
+        cr.set_operator(cairo.OPERATOR_CLEAR); cr.paint()
+        cr.set_operator(cairo.OPERATOR_OVER)
+        W = s.get_allocated_width(); H = s.get_allocated_height()
+        draw_vignette(cr, W, H, s.t, s.rev)
+        draw_hud(cr, W, H, s.rev)
+        draw_banner(cr, W, H, s.rev)
+        draw_emblem(cr, s.mx, s.my, 32, s.t, s.rev)
+        return True
+
+signal.signal(signal.SIGTERM, lambda *a: Gtk.main_quit())
+W()
+Gtk.main()
+PYEOF
+    python3 /tmp/overkill.py &
+    echo $! > /tmp/kill-overlay-pid
+    hyprctl dispatch submap kill
+    ;;
+  kill)
+    PID=$(hyprctl clients -j | jq -r --argjson x "$(hyprctl cursorpos -j | jq '.x // 0')" --argjson y "$(hyprctl cursorpos -j | jq '.y // 0')" '[.[] | select(.pid > 1 and .at[0] <= $x and $x < (.at[0]+.size[0]) and .at[1] <= $y and $y < (.at[1]+.size[1]))] | sort_by(.focusHistoryID) | .[0].pid // empty')
+    [ -z "$PID" ] || [ "$PID" -le 1 ] && exit 1
+    APP=$(ps -p "$PID" -o comm= 2>/dev/null | tr -d ' ')
+    [ -z "$APP" ] && exit 1
+    case "$APP" in
+      Hyprland|hyprland|systemd|systemd-logind|login|Xorg|Xwayland|wayfire|river|emacs|ssh|sshd|sudo|su|dbus-daemon|dbus-broker|polkit*) exit 1 ;;
+    esac
+    kill -9 "$PID" 2>/dev/null
+    play_snd kill.ogg 1.5 150          # the "app killed" sound
+    "$0" cleanup
+    ;;
+  exit|cleanup)
+    echo "KILL MODE OFF"
+    stop_hum                           # stop the looping menu ambience
+    play_snd kiroshi_off.ogg 1.5 150   # the power-down blip
+    PID=$(cat /tmp/kill-overlay-pid 2>/dev/null)
+    if [ -n "$PID" ]; then
+        kill -USR1 "$PID" 2>/dev/null            # tell the overlay to play its outro, then it closes itself
+        ( sleep 1; kill "$PID" 2>/dev/null ) &   # backup: force-kill it after 1s in case the outro never finishes
+    fi
+    rm -f /tmp/kill-overlay-pid
+    hyprctl dispatch submap reset
+    ;;
+esac

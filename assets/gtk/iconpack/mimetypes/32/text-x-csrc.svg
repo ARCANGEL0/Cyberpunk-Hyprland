@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   height="32"
+   width="32"
+   version="1.1"
+   id="svg29"
+   sodipodi:docname="gnome-mime-text-x-c.svg"
+   inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview31"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     showgrid="false"
+     inkscape:zoom="19.625"
+     inkscape:cx="16"
+     inkscape:cy="16"
+     inkscape:window-width="1920"
+     inkscape:window-height="1007"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg29" />
+  <defs
+     id="defs13">
+    <linearGradient
+       id="c"
+       gradientUnits="userSpaceOnUse"
+       x1="404.57"
+       x2="411.57"
+       y1="524.8"
+       y2="531.8"
+       gradientTransform="translate(-384.57 -515.8)">
+      <stop
+         offset="0"
+         stop-color="#060606"
+         id="stop2" />
+      <stop
+         offset="1"
+         stop-opacity="0"
+         id="stop4" />
+    </linearGradient>
+    <linearGradient
+       xlink:href="#a"
+       id="b"
+       x1="5"
+       y1="30"
+       x2="5"
+       y2="2"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="translate(-20)" />
+    <linearGradient
+       id="a"
+       y1="392.36"
+       y2="365.36"
+       x2="0"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="translate(309.57 152.44)">
+      <stop
+         stop-color="#fff"
+         stop-opacity="0"
+         id="stop8" />
+      <stop
+         offset="1"
+         stop-color="#fff"
+         stop-opacity=".2"
+         id="stop10" />
+    </linearGradient>
+  </defs>
+  <path
+     d="M20 2H8C6.338 2 5 3.338 5 5v22c0 1.662 1.338 3 3 3h16c1.662 0 3-1.338 3-3V9z"
+     fill="#13a4f7"
+     id="path15" />
+  <path
+     d="M8 2a2.99 2.99 0 00-2.123.877c-.031.031-.02.09-.05.123H20V2z"
+     color="#000"
+     opacity=".5"
+     fill="#fff"
+     id="path17" />
+  <path
+     d="M5.826 29c.03.033.02.092.051.123A2.99 2.99 0 008 30h16a2.99 2.99 0 002.123-.877c.031-.031.02-.09.05-.123z"
+     color="#000"
+     opacity=".25"
+     id="path19" />
+  <path
+     d="M 20,2 H 8.0000001 c -1.662,0 -3,1.338 -3,3 v 22 c 0,1.662 1.338,3 3,3 H 24 c 1.662,0 3,-1.338 3,-3 V 9 Z"
+     opacity="0.4"
+     fill="url(#b)"
+     id="path21"
+     style="fill:url(#b)" />
+  <path
+     d="M27 9l-7-7v7z"
+     opacity=".6"
+     fill-rule="evenodd"
+     id="path23" />
+  <path
+     d="M20 9l7 7V9z"
+     opacity=".1"
+     fill="url(#c)"
+     fill-rule="evenodd"
+     id="path25" />
+  <path
+     d="m 16.427747,9.8164342 a 6,6 0 0 0 -6,5.9999998 6,6 0 0 0 6,6 6,6 0 0 0 4.24,-1.76 l -0.707,-0.707 a 5,5 0 0 1 -3.533,1.467 5,5 0 0 1 -5,-5 5,5 0 0 1 5,-5 5,5 0 0 1 3.533,1.467 l 0.707,-0.707 a 6,6 0 0 0 -4.24,-1.7599998 z"
+     fill-rule="evenodd"
+     opacity="0.7"
+     id="path27" />
+</svg>

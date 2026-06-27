@@ -1,0 +1,146 @@
+/* Cyberpunk netrunner GTK theme
+/* ── palette (translucent = glass) ─────────────────────────────────────── */
+@define-color cy_bg     rgba(7,9,13,0.88);      /* window (glassy)        */
+@define-color cy_bg2    rgba(16,11,14,0.93);    /* raised surfaces        */
+@define-color cy_base   rgba(10,7,10,0.80);     /* fields / views (NOT white) */
+@define-color cy_fg     #e7f1f6;
+@define-color cy_dim    #9a777e;
+@define-color cy_red    #ff2d3d;                /* primary HUD accent     */
+@define-color cy_red2   #ff5a64;
+@define-color cy_cyan   #2de2ff;                /* secondary accent       */
+@define-color cy_sel    rgba(255,45,61,0.34);   /* red selection fill     */
+@define-color cy_border rgba(255,45,61,0.42);   /* red HUD borders        */
+
+/* ── GTK3 (Adwaita) named tokens ───────────────────────────────────────── */
+@define-color theme_bg_color @cy_bg;
+@define-color theme_base_color @cy_base;
+@define-color theme_fg_color @cy_fg;
+@define-color theme_text_color @cy_fg;
+@define-color theme_selected_bg_color @cy_sel;
+@define-color theme_selected_fg_color #ffffff;
+@define-color insensitive_bg_color @cy_bg2;
+@define-color insensitive_fg_color @cy_dim;
+@define-color borders @cy_border;
+@define-color theme_unfocused_bg_color @cy_bg;
+@define-color theme_unfocused_base_color @cy_base;
+@define-color theme_unfocused_fg_color @cy_fg;
+
+/* ── GTK4 / libadwaita named tokens ────────────────────────────────────── */
+@define-color window_bg_color @cy_bg;
+@define-color window_fg_color @cy_fg;
+@define-color view_bg_color @cy_base;
+@define-color view_fg_color @cy_fg;
+@define-color headerbar_bg_color rgba(11,8,11,0.93);
+@define-color headerbar_fg_color @cy_fg;
+@define-color popover_bg_color @cy_bg2;
+@define-color popover_fg_color @cy_fg;
+@define-color card_bg_color @cy_bg2;
+@define-color dialog_bg_color @cy_bg;
+@define-color sidebar_bg_color rgba(9,6,9,0.90);
+@define-color accent_color @cy_red2;
+@define-color accent_bg_color @cy_red;
+@define-color accent_fg_color #ffffff;
+@define-color destructive_color @cy_red;
+@define-color success_color @cy_cyan;
+@define-color warning_color #ffb454;
+@define-color error_color @cy_red;
+
+/* ── base / windows ────────────────────────────────────────────────────── */
+* { outline-color: alpha(@cy_red,0.7); }
+window, .background, dialog, assistant, messagedialog, .csd {
+    background-color: @cy_bg; color: @cy_fg;
+}
+
+/* headerbars / toolbars / menubars — glass + red HUD edge */
+headerbar, .titlebar, .toolbar, toolbar, .primary-toolbar, .csd headerbar {
+    background-color: rgba(11,8,11,0.93); color: @cy_fg;
+    border-bottom: 2px solid @cy_red; box-shadow: none; background-image: none;
+}
+menubar, .menubar { background-color: transparent; border-bottom: 1px solid alpha(@cy_red,0.5); }
+menubar > menuitem { color: @cy_fg; }
+
+/* ── FIELDS — kill every white background (entries / spin / search / text / combo) ── */
+entry, entry text, .entry, spinbutton, spinbutton text, textview, textview text,
+searchentry, combobox entry, combobox box, combobox button, .linked entry, .search-bar {
+    background-color: @cy_base; color: @cy_fg;
+    border: 1px solid @cy_border; border-radius: 2px; box-shadow: none;
+    caret-color: @cy_red;
+}
+entry:focus, spinbutton:focus, searchentry:focus, entry:focus-within {
+    border-color: @cy_red; box-shadow: inset 0 0 0 1px alpha(@cy_red,0.55);
+}
+entry image, entry placeholder, placeholder { color: @cy_dim; }
+
+/* ── views / lists / trees / icon views — dark, never white ── */
+.view, treeview.view, list, listview, columnview, gridview, iconview, textview,
+.content-view, placesview, scrolledwindow viewport, .frame {
+    background-color: @cy_base; color: @cy_fg;
+}
+treeview.view:hover, row:hover, list row:hover, .view:hover { background-color: alpha(@cy_red,0.10); }
+treeview.view header button { background-color: rgba(14,9,12,0.95); color: @cy_fg; border: 1px solid alpha(@cy_red,0.3); }
+
+/* ── selection — red HUD with a red left-spine ── */
+selection { background-color: @cy_sel; color: #ffffff; }
+*:selected, *:selected:focus,
+row:selected, list row:selected, .view:selected, treeview.view:selected, iconview:selected,
+placessidebar row:selected, .sidebar row:selected, columnview row:selected {
+    background-color: @cy_sel; color: #ffffff; box-shadow: inset 3px 0 0 @cy_red;
+}
+
+/* ── buttons — angular glass, red border ── */
+button, .button, spinbutton button {
+    background-color: rgba(16,11,14,0.9); color: @cy_fg;
+    border: 1px solid @cy_border; border-radius: 2px; box-shadow: none; background-image: none;
+}
+button:hover { border-color: @cy_red; color: #ffffff; background-color: alpha(@cy_red,0.12); }
+button:active, button:checked { background-color: alpha(@cy_red,0.22); border-color: @cy_red; color: #ffffff; }
+button.suggested-action, button.default { background-color: alpha(@cy_red,0.28); border-color: @cy_red; color: #ffffff; }
+button.destructive-action { background-color: alpha(@cy_red,0.32); border-color: @cy_red2; color: #ffffff; }
+button.flat { background-color: transparent; border-color: transparent; }
+button.flat:hover { background-color: alpha(@cy_red,0.12); border-color: alpha(@cy_red,0.4); }
+
+/* ── sidebars / places ── */
+.sidebar, placessidebar, stacksidebar, .navigation-sidebar, paned.horizontal > .sidebar {
+    background-color: rgba(9,6,9,0.90); color: @cy_fg; border-right: 1px solid alpha(@cy_red,0.3);
+}
+
+/* ── scrollbars — red ── */
+scrollbar { background-color: transparent; }
+scrollbar slider { background-color: alpha(@cy_red,0.5); border-radius: 2px; min-width: 7px; min-height: 7px; }
+scrollbar slider:hover { background-color: @cy_red; }
+
+/* ── checks / radios / switches ── */
+check, radio { background-color: @cy_base; border: 1px solid @cy_border; border-radius: 2px; }
+check:checked, radio:checked { background-color: @cy_red; border-color: @cy_red2; color: #0a0d12; }
+switch { background-color: @cy_bg2; border: 1px solid @cy_border; border-radius: 2px; }
+switch:checked { background-color: alpha(@cy_red,0.40); border-color: @cy_red; }
+switch slider { background-color: @cy_fg; border-radius: 2px; }
+
+/* ── progress / scales ── */
+trough { background-color: rgba(16,11,14,0.8); border-radius: 2px; }
+progressbar progress, levelbar block.filled { background-color: @cy_red; }
+scale highlight { background-color: @cy_red; }
+scale slider { background-color: @cy_fg; border: 1px solid @cy_red; }
+
+/* ── menus / popovers — glass ── */
+menu, .menu, .context-menu, popover, popover > contents, popover.background, .popup {
+    background-color: @cy_bg2; color: @cy_fg;
+    border: 1px solid @cy_border; border-radius: 3px;
+}
+menuitem, modelbutton { color: @cy_fg; border-radius: 2px; }
+menuitem:hover, modelbutton:hover, .menuitem:hover { background-color: alpha(@cy_red,0.16); color: #ffffff; }
+separator { background-color: alpha(@cy_red,0.25); min-width: 1px; min-height: 1px; }
+
+/* ── notebook tabs / path bar ── */
+notebook > header { background-color: transparent; border-color: alpha(@cy_red,0.3); }
+notebook > header tab { color: @cy_dim; }
+notebook > header tab:checked { color: #ffffff; box-shadow: inset 0 -2px @cy_red; }
+.path-bar button, .linked > button { border-radius: 2px; }
+.path-bar button:checked { color: @cy_red2; box-shadow: inset 0 -2px @cy_red; }
+
+/* ── misc ── */
+tooltip { background-color: rgba(5,7,9,0.96); color: @cy_red2; border: 1px solid @cy_red; }
+link, *:link { color: @cy_cyan; }
+spinner { color: @cy_red; }
+label.dim-label, .dim-label { color: @cy_dim; }
+infobar { background-color: alpha(@cy_red,0.15); border: 1px solid @cy_border; }

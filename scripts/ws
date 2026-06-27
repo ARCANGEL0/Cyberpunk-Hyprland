@@ -1,0 +1,164 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SOCK="$XDG_RUNTIME_DIR/astal/cyberpunk.sock"
+STATE="${XDG_RUNTIME_DIR:-/tmp}/cyberpunk-ws-layout.tsv"
+
+pin_workspaces() {
+    local mons batch i m n ws
+    mons="$(hyprctl monitors -j)"
+    batch=""
+    i=0
+    while IFS= read -r m; do
+        for n in 1 2 3 4 5 6 7 8 9 10; do
+            ws=$((n + i * 10))
+            batch="${batch}keyword workspace ${ws},monitor:${m},persistent:true ; "
+            batch="${batch}dispatch moveworkspacetomonitor ${ws} ${m} ; "
+        done
+        i=$((i + 1))
+    done < <(printf '%s\n' "$mons" | jq -r 'sort_by(.id) | .[].name')
+    [ -n "$batch" ] && hyprctl --batch "$batch" >/dev/null
+}
+
+normalize_windows() {
+    local mons clients batch addr mon ws idx logical target
+    pin_workspaces 2>/dev/null || true
+    mons="$(hyprctl monitors -j)"
+    clients="$(hyprctl clients -j)"
+    batch=""
+    while IFS=$'\t' read -r addr mon ws; do
+        [ -n "$addr" ] || continue
+        [ "$ws" -gt 0 ] 2>/dev/null || continue
+        idx="$(printf '%s\n' "$mons" | jq -r --arg m "$mon" 'sort_by(.id) | to_entries[] | select(.value.name==$m) | .key' | head -1)"
+        [ -n "$idx" ] || idx=0
+        logical=$(( ((ws - 1) % 10) + 1 ))
+        target=$(( logical + idx * 10 ))
+        [ "$target" = "$ws" ] && continue
+        batch="${batch}dispatch movetoworkspacesilent ${target},address:${addr} ; "
+    done < <(printf '%s\n' "$clients" | jq -r '.[] | select(.mapped and (.workspace.id > 0)) | "\(.address)\t\(.monitor)\t\(.workspace.id)"')
+    [ -n "$batch" ] && hyprctl --batch "$batch" >/dev/null
+}
+
+monitor_index() {
+    local mons mon
+    mons="$1"
+    mon="$2"
+    printf '%s\n' "$mons" | jq -r --argjson m "$mon" 'sort_by(.id) | to_entries[] | select(.value.id==$m) | .key' | head -1
+}
+
+remember_window() {
+    local addr idx logical tmp
+    addr="$1"
+    idx="$2"
+    logical="$3"
+    [ -n "$addr" ] || return 0
+    tmp="$(mktemp)"
+    [ -f "$STATE" ] && cp "$STATE" "$tmp"
+    grep -v -F "${addr}"$'\t' "$tmp" > "${tmp}.next" || true
+    mv "${tmp}.next" "$tmp"
+    printf '%s\t%s\t%s\n' "$addr" "$idx" "$logical" >> "$tmp"
+    mv "$tmp" "$STATE"
+}
+
+save_visible_layout() {
+    local mons clients active tmp
+    mons="$(hyprctl monitors -j)"
+    clients="$(hyprctl clients -j)"
+    active="$(printf '%s\n' "$mons" | jq -r '[.[].activeWorkspace.id] | map(tostring) | join("|")')"
+    tmp="$(mktemp)"
+    [ -f "$STATE" ] && cp "$STATE" "$tmp"
+    printf '%s\n' "$clients" | jq -r --arg active "$active" '
+        ($active | split("|")) as $activeIds |
+        .[] |
+        select(.mapped and (.workspace.id > 0) and ((.workspace.id | tostring) as $w | $activeIds | index($w))) |
+        "\(.address)\t\(.monitor)\t\((((.workspace.id - 1) % 10) + 1))"
+    ' | while IFS=$'\t' read -r addr mon logical; do
+        [ -n "$addr" ] || continue
+        local idx
+        idx="$(monitor_index "$mons" "$mon")"
+        [ -n "$idx" ] || idx=0
+        grep -v -F "${addr}"$'\t' "$tmp" > "${tmp}.next" || true
+        mv "${tmp}.next" "$tmp"
+        printf '%s\t%s\t%s\n' "$addr" "$idx" "$logical" >> "$tmp"
+    done
+    mv "$tmp" "$STATE"
+}
+
+restore_layout() {
+    local logical_filter="${1:-}" addr idx logical target clients cur batch
+    [ -f "$STATE" ] || return 0
+    clients="$(hyprctl clients -j)"
+    batch=""
+    while IFS=$'\t' read -r addr idx logical; do
+        [ -n "$addr" ] || continue
+        [ -z "$logical_filter" ] || [ "$logical" = "$logical_filter" ] || continue
+        target=$(( logical + idx * 10 ))
+        cur="$(printf '%s\n' "$clients" | jq -r --arg a "$addr" '.[] | select(.address==$a) | .workspace.id' | head -1)"
+        [ -n "$cur" ] || continue
+        [ "$cur" = "$target" ] && continue
+        batch="${batch}dispatch movetoworkspacesilent ${target},address:${addr} ; "
+    done < "$STATE"
+    [ -n "$batch" ] && hyprctl --batch "$batch" >/dev/null
+}
+
+go_workspace() {
+    local n focused batch i m current logical delta next
+    n="$1"
+    case "$n" in
+        +*|-*)
+            save_visible_layout 2>/dev/null || true
+            current="$(hyprctl monitors -j | jq -r '.[] | select(.focused) | .activeWorkspace.id')"
+            [ -n "$current" ] || current=1
+            logical=$(( ((current - 1) % 10) + 1 ))
+            delta=$((n))
+            next=$(( ((logical - 1 + delta) % 10 + 10) % 10 + 1 ))
+            go_workspace "$next"
+            return
+            ;;
+        *)
+            save_visible_layout 2>/dev/null || true
+            pin_workspaces 2>/dev/null || true
+            restore_layout "$n" 2>/dev/null || true
+            focused="$(hyprctl monitors -j | jq -r '.[]|select(.focused)|.name')"
+            batch=""
+            i=0
+            while IFS= read -r m; do
+                batch="${batch}dispatch focusmonitor ${m} ; dispatch workspace $(( n + i * 10 )) ; "
+                i=$((i + 1))
+            done < <(hyprctl monitors -j | jq -r 'sort_by(.id) | .[].name')
+            batch="${batch}dispatch focusmonitor ${focused}"
+            hyprctl --batch "$batch" >/dev/null
+            restore_layout "$n" 2>/dev/null || true
+            ;;
+    esac
+    echo "ws-go $n" | socat - UNIX-CONNECT:"$SOCK" 2>/dev/null || true
+}
+
+move_window() {
+    local n win mon addr idx target
+    n="$1"
+    pin_workspaces 2>/dev/null || true
+    win="$(hyprctl activewindow -j)"
+    mon="$(printf '%s\n' "$win" | jq -r '.monitor // empty')"
+    addr="$(printf '%s\n' "$win" | jq -r '.address // empty')"
+    if [ -z "$mon" ]; then
+        hyprctl dispatch movetoworkspace "$n"
+        exit 0
+    fi
+    idx="$(hyprctl monitors -j | jq -r --argjson m "$mon" 'sort_by(.id) | to_entries[] | select(.value.id==$m) | .key' | head -1)"
+    [ -n "$idx" ] || idx=0
+    target=$(( n + idx * 10 ))
+    remember_window "$addr" "$idx" "$n" 2>/dev/null || true
+    hyprctl dispatch movetoworkspace "$target"
+    save_visible_layout 2>/dev/null || true
+}
+
+cmd="${1:-go}"
+case "$cmd" in
+    go) shift; go_workspace "${1:?workspace number required}" ;;
+    move) shift; move_window "${1:?workspace number required}" ;;
+    pin) pin_workspaces ;;
+    normalize) normalize_windows ;;
+    +*|-*|[0-9]*) go_workspace "$cmd" ;;
+    *) echo "usage: $0 {go|move|pin|normalize} [workspace]" >&2; exit 2 ;;
+esac

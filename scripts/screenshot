@@ -1,0 +1,20 @@
+#!/usr/bin/bash
+SOCK="$XDG_RUNTIME_DIR/astal/cyberpunk.sock"
+AUDIO="$(cd "$(dirname "$0")/../assets/audio" && pwd)"
+MON_HELPER="$(cd "$(dirname "$0")" && pwd)/active-monitor"
+active_snd() { setsid -f sh -c "play -q -v 1.5 \"$AUDIO/active.ogg\" 2>/dev/null || mpv --no-video --really-quiet --volume=150 \"$AUDIO/active.ogg\" 2>/dev/null" >/dev/null 2>&1; }
+read -r MON MX MY MW MH < <("$MON_HELPER")
+
+if [ "$1" = "full" ]; then
+    D="$HOME/Pictures/Screenshots"; mkdir -p "$D"
+    F="$D/$(date +%Y-%m-%d_%H-%M-%S).png"
+    grim -o "$MON" "$F" && wl-copy < "$F"
+    active_snd
+    echo "shutter $MX $MY $MW $MH" | socat - UNIX-CONNECT:"$SOCK" 2>/dev/null
+    command -v notify-send >/dev/null 2>&1 && \
+        notify-send -t 2500 "Screenshot" "$MON saved & copied" -i "$F"
+else
+    # the drag-to-select region picker is handled over in AGS 
+    active_snd
+    echo "region-shot $MX $MY $MW $MH" | socat - UNIX-CONNECT:"$SOCK" 2>/dev/null
+fi

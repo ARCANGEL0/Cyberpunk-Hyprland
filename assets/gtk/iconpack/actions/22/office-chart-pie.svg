@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 22 22"
+   version="1.1"
+   id="svg6"
+   sodipodi:docname="office-chart-pie.svg"
+   inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <metadata
+     id="metadata10">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1920"
+     inkscape:window-height="1007"
+     id="namedview8"
+     showgrid="true"
+     inkscape:zoom="10.727273"
+     inkscape:cx="-7.1779659"
+     inkscape:cy="11.18644"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg6"
+     inkscape:document-rotation="0"
+     inkscape:pagecheckerboard="0">
+    <inkscape:grid
+       type="xygrid"
+       id="grid885" />
+  </sodipodi:namedview>
+  <defs
+     id="defs3051">
+    <style
+       type="text/css"
+       id="current-color-scheme">
+      .ColorScheme-Text {
+        color:#eff0f1;
+      }
+      </style>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient1268"
+       id="linearGradient1270"
+       x1="0"
+       y1="26"
+       x2="52"
+       y2="26"
+       gradientUnits="userSpaceOnUse" />
+    <linearGradient
+       inkscape:collect="always"
+       id="linearGradient1268">
+      <stop
+         style="stop-color:#2ad4ff;stop-opacity:1"
+         offset="0"
+         id="stop1264" />
+      <stop
+         style="stop-color:#2a7fff;stop-opacity:1"
+         offset="1"
+         id="stop1266" />
+    </linearGradient>
+  </defs>
+  <g
+     data-name="Pie chart"
+     id="g8"
+     transform="matrix(0,0.26666609,-0.26666609,0,19.592337,2.7591824)" />
+  <g
+     id="Zoom_1_"
+     transform="matrix(0.30769231,0,0,0.30769231,3,3)">
+    <path
+       id="Zoom"
+       class="st0"
+       d="m 49.1,37.8 v 0 C 51,34.3 52,30.3 52,26 52,11.6 40.4,0 26,0 11.6,0 0,11.6 0,26 0,40.4 11.6,52 26,52 34.6,52 42.2,47.8 47,41.3 v 0 0 0 0 z M 26,44 C 16.1,44 8,35.9 8,26 8,16.1 16.1,8 26,8 c 9.9,0 18,8.1 18,18 0,9.9 -8.1,18 -18,18 z"
+       sodipodi:nodetypes="ccssssccccccsssss"
+       style="fill:url(#linearGradient1270);fill-opacity:1" />
+    <path
+       id="Zoom-s"
+       class="st1"
+       d="M 47,41.3 Z M 16.1,16.1 Z M 47,41.3 c 3.6,-4.9 5.4,-11 4.9,-17.1 C 51.5,17.9 48.8,12 44.3,7.6 l -2.8,2.8 c 4,4 6.4,9.5 6.4,15.6 0,4.6 -1.4,8.9 -3.9,12.5 z"
+       sodipodi:nodetypes="ccccccccccccccccsccc"
+       style="fill:#eff0f1;fill-opacity:1" />
+  </g>
+  <path
+     d="m 10.721913,5.4585892 -0.0296,0.00295 v 0 V 11 c 0.0011,-0.09858 0,0.615384 0,0.615384 h 5.815384 v 0 c 0.03077,-0.307692 0.03077,-1.230769 0.03077,-1.230769 C 16.571877,9.3608144 15.774359,7.5028259 14.076928,6.3846153 13.194919,5.8035787 12.069939,5.4222803 10.692309,5.4615384 Z"
+     id="path2-3"
+     style="fill:#eff0f1;fill-opacity:1;stroke-width:0.0617793"
+     sodipodi:nodetypes="scccccccscs" />
+</svg>
