@@ -1,0 +1,36 @@
+#!/bin/sh
+# this fires from my pacman hook right after an install. the hook feeds the package names in on
+# stdin (thats what NeedsTargets does), i grab em and poke the running HUD over its socket so the
+# install bar pops up. runs as root cuz its a hook, but root can still write my user socket so np.
+
+pkgs=$(cat | awk 'NF')
+[ -z "$pkgs" ] && exit 0
+
+n=$(printf '%s\n' "$pkgs" | grep -c .)
+first=$(printf '%s\n' "$pkgs" | head -1)
+ver=$(pacman -Q "$first" 2>/dev/null | awk '{print $2}')
+tname=$(printf '%s' "$first" | cut -c1-16 | tr '[:lower:]' '[:upper:]')
+
+if [ "$n" -gt 1 ]; then
+    title="PACKAGES ADDED!"
+    budget=22
+    list=""; shown=0
+    for p in $pkgs; do
+        cand="$p"; [ -n "$list" ] && cand="$list, $p"
+        if [ ${#cand} -le $budget ]; then list="$cand"; shown=$((shown + 1)); else break; fi
+    done
+    rem=$((n - shown))
+    [ "$rem" -gt 0 ] && list="$list +$rem more"
+    info="PKGS INSTALLED: $list"
+else
+    title="$tname INSTALLED!"
+    info="$first  $ver"
+fi
+
+msg="pkg-installed ${title}|${info}"
+
+for s in /run/user/*/astal/cyberpunk.sock; do
+    [ -S "$s" ] || continue
+    printf '%s' "$msg" | socat - "UNIX-CONNECT:$s" >/dev/null 2>&1
+done
+exit 0

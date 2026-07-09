@@ -1,0 +1,10 @@
+[Trigger]
+Operation = Install
+Type = Package
+Target = *
+
+[Action]
+Description = Cyberpunk HUD: notify on package install
+When = PostTransaction
+Exec = __THEME__/scripts/pkg-notify
+NeedsTargets

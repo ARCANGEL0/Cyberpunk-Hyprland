@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 22 22"
+   version="1.1"
+   id="svg6"
+   sodipodi:docname="folder-Peace.svg"
+   inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <metadata
+     id="metadata10">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1920"
+     inkscape:window-height="1013"
+     id="namedview8"
+     showgrid="false"
+     inkscape:zoom="14.272728"
+     inkscape:cx="0.31528662"
+     inkscape:cy="14.923567"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg6"
+     inkscape:pagecheckerboard="0" />
+  <defs
+     id="defs3051">
+    <style
+       type="text/css"
+       id="current-color-scheme">
+      .ColorScheme-Text {
+        color:#eff0f1
+      }
+      </style>
+  </defs>
+  <path
+     d="m 11,3.018 c -4.4,0 -8,3.6 -8,8 0,4.4 3.6,8 8,8 4.4,0 8,-3.6 8,-8 0,-4.4 -3.6,-8 -8,-8 z m -0.571433,1.2 v 1.0857134 c 0,0.3428533 0.22858,0.5714266 0.571433,0.5714266 0.342853,0 0.571433,-0.2285733 0.571433,-0.5714266 V 4.218 c 3.485714,0.2857133 6.285714,3.25714 6.285714,6.799673 0,1.428574 -0.457147,2.742854 -1.14286,3.828567 L 11.571433,10.731953 V 7.0176734 c 0,-0.3428667 -0.22858,-0.5714267 -0.571433,-0.5714267 -0.342853,0 -0.571433,0.22856 -0.571433,0.5714267 V 10.731953 L 5.285713,14.84624 c -0.74286,-1.085713 -1.14286,-2.399993 -1.14286,-3.828567 0,-3.5999996 2.8,-6.5142863 6.285714,-6.799673 z m -4.4,11.486033 4.4,-3.542853 v 5.657147 c -1.71428,-0.11428 -3.257134,-0.91428 -4.4,-2.114294 z m 5.542866,2.114294 V 12.16118 l 4.4,3.542853 c -1.142866,1.2 -2.68572,2 -4.4,2.114294 z"
+     id="path47"
+     style="fill:#eff0f1;fill-opacity:1;stroke-width:0.0653061" />
+</svg>

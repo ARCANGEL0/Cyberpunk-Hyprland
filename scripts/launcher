@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# toggle the CP2077-style "APPS" wheel launcher inspired in the kiroshi scanner, plus the original sound effects from the game taken from the official files.
+echo "apps-menu" | socat - UNIX-CONNECT:"$XDG_RUNTIME_DIR/astal/cyberpunk.sock" 2>/dev/null

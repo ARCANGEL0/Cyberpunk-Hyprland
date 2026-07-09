@@ -1,0 +1,479 @@
+* {
+  all: unset; }
+
+* {
+  font-family: "Quantico", "Rajdhani", sans-serif; }
+
+window.aug, .aug {
+  background-color: transparent; }
+
+.aug-wrap {
+  background-color: transparent; }
+
+.monitors-wrap {
+  margin: 20px 0 0 20px; }
+
+.monitors {
+  padding: 0; }
+
+.sidepanel-wrap {
+  margin: 26px 28px 0 0; }
+
+.side-panel {
+  padding: 0; }
+
+.nowplaying-wrap {
+  margin: 30px 414px 0 0;
+  background-color: transparent; }
+
+.nowplaying {
+  background-color: transparent; }
+
+.clock-card {
+  padding: 0 0 4px 0; }
+
+.nc-plate {
+  border: 2px solid #ff2d3d;
+  padding: 4px 12px;
+  border-radius: 2px;
+  box-shadow: 0 0 12px rgba(255, 45, 61, 0.45), inset 0 0 8px rgba(255, 45, 61, 0.12); }
+
+.map-card {
+  border: 1px solid rgba(255, 45, 61, 0.3);
+  border-radius: 3px;
+  padding: 12px 14px;
+  background-color: rgba(4, 6, 9, 0.42);
+  box-shadow: 0 0 14px rgba(255, 45, 61, 0.1), inset 0 0 18px rgba(0, 0, 0, 0.5); }
+
+.forecast {
+  padding: 4px 2px;
+  border-top: 1px solid rgba(255, 45, 61, 0.18);
+  border-bottom: 1px solid rgba(255, 45, 61, 0.18); }
+
+.notif-feed {
+  padding: 2px 0; }
+
+.notif-row {
+  border-left: 2px solid rgba(255, 45, 61, 0.45);
+  padding: 2px 0 2px 12px; }
+
+.notif-row:hover {
+  border-left: 2px solid #ff2d3d;
+  background-color: rgba(255, 45, 61, 0.12); }
+
+.toggles-wrap {
+  margin: 0 0 0px -5px; }
+
+.launcher-wrap {
+  margin: 0 2px 24px 0; }
+
+.launcher-btn {
+  background-color: transparent;
+  padding: 0; }
+
+.dock {
+  padding: 0; }
+
+.dock-conn {
+  padding: 0 0 4px 2px; }
+
+.dock-conn-red {
+  font-family: "Tektur", monospace;
+  font-size: 8px;
+  color: rgba(255, 45, 61, 0.72); }
+
+.dock-tile {
+  background-color: rgba(7, 12, 22, 0.36);
+  border: 1px solid rgba(37, 224, 255, 0.56);
+  border-radius: 2px;
+  min-width: 52px;
+  min-height: 54px;
+  padding: 3px 6px;
+  margin: 0;
+  transition: 120ms; }
+
+.dock-tile:hover {
+  background-color: rgba(37, 224, 255, 0.14);
+  border: 1px solid rgba(37, 224, 255, 0.9); }
+
+.dock-tile.open {
+  background-color: rgba(37, 224, 255, 0.18);
+  border: 1px solid #25e0ff;
+  box-shadow: 0 0 12px rgba(37, 224, 255, 0.45); }
+
+.dock-hint {
+  font-family: "Quantico", sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+  color: rgba(255, 45, 61, 0.88); }
+
+.dock-ico {
+  font-family: "Tektur", monospace;
+  font-size: 18px;
+  color: rgba(37, 224, 255, 0.78);
+  text-shadow: 0 0 6px rgba(37, 224, 255, 0.35); }
+
+.dock-tile.on .dock-ico {
+  color: #25e0ff;
+  text-shadow: 0 0 8px rgba(37, 224, 255, 0.7); }
+
+.dock-lbl {
+  font-family: "Quantico", sans-serif;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: rgba(228, 240, 255, 0.58); }
+
+.dock-tile.on .dock-lbl {
+  color: rgba(228, 240, 255, 0.88); }
+
+.modal-wrap {
+  background-color: transparent; }
+
+.modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.34); }
+
+.modal-panel {
+  background-color: rgba(6, 2, 4, 0.92);
+  border: 1px solid rgba(255, 45, 61, 0.9);
+  box-shadow: 0 0 38px rgba(255, 45, 61, 0.32), inset 0 0 18px rgba(255, 45, 61, 0.1);
+  padding: 0;
+  min-width: 360px; }
+
+.modal-head {
+  background-color: rgba(255, 45, 61, 0.16);
+  border-bottom: 1px solid rgba(255, 45, 61, 0.5);
+  padding: 7px 12px; }
+
+.modal-title {
+  font-family: "Quantico", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: #ff2d3d; }
+
+.modal-x {
+  font-family: "FiraCode Nerd Font", monospace;
+  font-size: 12px;
+  color: rgba(255, 45, 61, 0.8);
+  padding: 0 4px;
+  background-color: transparent; }
+
+.modal-x:hover {
+  color: #fff; }
+
+.modal-scan {
+  padding: 7px 12px;
+  border-bottom: 1px solid rgba(255, 45, 61, 0.28);
+  background-color: rgba(255, 45, 61, 0.06); }
+
+.modal-scan-title {
+  font-family: "Quantico", sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+  color: rgba(255, 45, 61, 0.92);
+  letter-spacing: 2px; }
+
+.modal-scan-code {
+  font-family: "Tektur", monospace;
+  font-size: 9px;
+  color: rgba(255, 45, 61, 0.7); }
+
+.modal-body {
+  padding: 14px; }
+
+.modal-row {
+  padding: 2px 0 12px 0; }
+
+.modal-ico {
+  font-family: "FiraCode Nerd Font", monospace;
+  font-size: 18px;
+  color: #ff2d3d;
+  margin-right: 12px; }
+
+.modal-val {
+  font-family: "Tektur", monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(228, 240, 255, 0.9);
+  margin-left: 12px; }
+
+.modal-slider {
+  min-width: 180px;
+  min-height: 14px; }
+
+.modal-slider trough {
+  background-color: rgba(255, 45, 61, 0.18);
+  border: 1px solid rgba(255, 45, 61, 0.4);
+  border-radius: 0;
+  min-height: 10px; }
+
+.modal-slider trough highlight {
+  background-color: #ff2d3d;
+  border-radius: 0;
+  box-shadow: 0 0 8px rgba(255, 45, 61, 0.7); }
+
+.modal-slider slider {
+  background-color: #fff;
+  border-radius: 0;
+  min-width: 4px;
+  min-height: 16px;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.8); }
+
+.modal-btn {
+  background-color: rgba(255, 45, 61, 0.1);
+  border: 1px solid rgba(255, 45, 61, 0.55);
+  color: #ff2d3d;
+  font-family: "Quantico", sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 2px;
+  padding: 9px;
+  margin: 2px 0 9px 0;
+  transition: 120ms ease; }
+
+.modal-btn:hover {
+  background-color: rgba(255, 45, 61, 0.28);
+  border: 1px solid #ff2d3d;
+  box-shadow: 0 0 12px rgba(255, 45, 61, 0.45);
+  color: #ffffff; }
+
+.modal-scroll {
+  min-width: 280px;
+  min-height: 150px; }
+
+.modal-list {
+  padding: 2px 0; }
+
+.modal-item {
+  background-color: rgba(255, 45, 61, 0.04);
+  padding: 8px 11px;
+  margin: 2px 0;
+  border-left: 2px solid transparent;
+  transition: 100ms ease; }
+
+.modal-item:hover {
+  background-color: rgba(255, 45, 61, 0.18);
+  border-left: 2px solid #ff2d3d;
+  box-shadow: inset 0 0 10px rgba(255, 45, 61, 0.12); }
+
+.modal-item.active {
+  border-left: 2px solid #ff2d3d;
+  background-color: rgba(255, 45, 61, 0.14); }
+
+.modal-dot {
+  font-family: "FiraCode Nerd Font", monospace;
+  font-size: 13px;
+  color: #ff2d3d;
+  margin-right: 11px;
+  text-shadow: 0 0 6px rgba(255, 45, 61, 0.5); }
+
+.modal-item-lbl {
+  font-family: "Quantico", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(228, 240, 255, 0.92); }
+
+.modal-sig {
+  font-family: "Tektur", monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 45, 61, 0.85); }
+
+.modal-empty {
+  font-family: "Tektur", monospace;
+  font-size: 11px;
+  color: rgba(228, 240, 255, 0.35);
+  padding: 8px; }
+
+.modal-pwr-grid {
+  padding: 12px; }
+
+.modal-pwr {
+  background-color: rgba(255, 45, 61, 0.07);
+  border: 1px solid rgba(255, 45, 61, 0.42);
+  padding: 16px 20px;
+  margin: 0 5px;
+  transition: 130ms ease; }
+
+.modal-pwr:hover {
+  background-color: rgba(255, 45, 61, 0.28);
+  border: 1px solid #ff2d3d;
+  box-shadow: 0 0 16px rgba(255, 45, 61, 0.5); }
+
+.modal-pwr-ico {
+  font-family: "FiraCode Nerd Font", monospace;
+  font-size: 27px;
+  color: #ff2d3d;
+  text-shadow: 0 0 10px rgba(255, 45, 61, 0.6); }
+
+.modal-pwr:hover .modal-pwr-ico {
+  color: #ffffff; }
+
+.modal-pwr-lbl {
+  font-family: "Quantico", sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #ff2d3d;
+  margin-top: 7px; }
+
+.dismiss-wrap {
+  margin: 326px 12px 0 0;
+  background-color: transparent; }
+
+.dismiss-btn {
+  background-color: rgba(255, 45, 61, 0.14);
+  border: 1px solid rgba(255, 45, 61, 0.6);
+  color: #ff2d3d;
+  font-family: "Quantico", sans-serif;
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 1px;
+  padding: 4px 9px; }
+
+.dismiss-btn:hover {
+  background-color: rgba(255, 45, 61, 0.3);
+  color: #fff; }
+
+.notifpopups-wrap {
+  margin: 156px 0 0 18px;
+  background-color: transparent; }
+
+.notifcenter-wrap {
+  margin: 0 0 0 18px;
+  background-color: transparent; }
+
+.notifcenter-box {
+  background-color: transparent; }
+
+.launcher-wrap {
+  margin: 0 3px 0 0;
+  background-color: transparent; }
+
+.quest-wrap {
+  margin: 62px 36px 0 0;
+  background-color: transparent; }
+
+.rec-wrap {
+  background-color: transparent; }
+
+window.ws_anim, window.banner, window.rec, window.rec_trans, window.region {
+  background-color: transparent; }
+
+.osd-wrap {
+  margin: 0 0 130px 0;
+  background-color: transparent;
+  border: none;
+  padding: 6px 10px; }
+
+.dock-slot {
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  margin: 0; }
+
+.dock-slot:hover {
+  background-color: rgba(37, 224, 255, 0.08); }
+
+.city-back {
+  background-color: rgba(0, 0, 0, 0.45); }
+
+.city-panel {
+  background-color: rgba(6, 10, 16, 0.96);
+  border: 1px solid rgba(255, 45, 61, 0.7);
+  box-shadow: 0 0 40px rgba(255, 45, 61, 0.25), inset 0 0 20px rgba(255, 45, 61, 0.06);
+  min-width: 380px; }
+
+.city-head {
+  background-color: rgba(255, 45, 61, 0.12);
+  border-bottom: 1px solid rgba(255, 45, 61, 0.4);
+  padding: 8px 12px; }
+
+.city-title {
+  font-family: "Quantico", sans-serif;
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: rgba(255, 45, 61, 0.95); }
+
+.city-now {
+  font-family: "Tektur", monospace;
+  font-size: 9px;
+  color: rgba(255, 196, 40, 0.85); }
+
+.city-body {
+  padding: 16px; }
+
+.city-lbl {
+  font-family: "Quantico", sans-serif;
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: rgba(228, 240, 255, 0.6);
+  margin-bottom: 8px; }
+
+.city-entry {
+  background-color: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 45, 61, 0.5);
+  border-radius: 0;
+  color: #ffffff;
+  font-family: "Tektur", monospace;
+  font-size: 13px;
+  padding: 8px 10px;
+  margin-bottom: 14px; }
+
+.city-entry:focus {
+  border: 1px solid #ff2d3d;
+  box-shadow: 0 0 10px rgba(255, 45, 61, 0.4); }
+
+.city-quick {
+  margin-bottom: 14px; }
+
+.city-chip {
+  background-color: rgba(255, 45, 61, 0.1);
+  border: 1px solid rgba(255, 45, 61, 0.4);
+  padding: 5px 12px;
+  margin-right: 6px;
+  color: rgba(228, 240, 255, 0.85);
+  font-family: "Quantico", sans-serif;
+  font-size: 11px;
+  font-weight: 600; }
+
+.city-chip:hover {
+  background-color: rgba(255, 45, 61, 0.25);
+  border: 1px solid rgba(255, 45, 61, 0.9); }
+
+.city-hint {
+  font-family: "Tektur", monospace;
+  font-size: 8px;
+  color: rgba(228, 240, 255, 0.35); }
+
+.topclock-wrap {
+  margin: 6px 0 0 0;
+  background-color: transparent; }
+
+.city-results {
+  margin-top: 4px; }
+
+.city-result {
+  background-color: rgba(255, 45, 61, 0.08);
+  border: 1px solid rgba(255, 45, 61, 0.22);
+  padding: 7px 11px;
+  margin: 2px 0;
+  color: rgba(228, 240, 255, 0.9);
+  font-family: "Tektur", monospace;
+  font-size: 12px; }
+
+.city-result:hover {
+  background-color: rgba(255, 45, 61, 0.22);
+  border-color: rgba(255, 45, 61, 0.7); }
+
+.city-foot {
+  font-family: "Tektur", monospace;
+  font-size: 8px;
+  color: rgba(228, 240, 255, 0.35);
+  margin-top: 10px; }
+
+.hordock-wrap {
+  margin: 0 0 8px 66px; }

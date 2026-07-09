@@ -1,0 +1,10 @@
+{
+    "name": "cyberpunk-bar",
+    "private": true,
+    "type": "module",
+    "dependencies": {
+        "astal": "*",
+        "ags": "*",
+        "gnim": "*"
+    }
+}

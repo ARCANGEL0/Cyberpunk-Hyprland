@@ -1,0 +1,50 @@
+#!/bin/sh
+# Streetcred reputation ala pacman cred
+# it sniffs out paru/yay/checkupdates on its own and just falls back to plain pacman if none are around.
+#   aur check    -> first line is the count, then every update as "pkg old -> new"
+#   aur upgrade  -> pops a real terminal and runs the upgrade in there. only way sudo + the pacman
+#                   prompts actually behave (cant do that inside the cairo hud)
+
+helper() { command -v paru 2>/dev/null || command -v yay 2>/dev/null || true; }
+
+repo_updates() {
+    if command -v checkupdates >/dev/null 2>&1; then
+        checkupdates 2>/dev/null
+    else
+        pacman -Qu 2>/dev/null
+    fi
+}
+
+aur_updates() {
+    h=$(helper)
+    [ -n "$h" ] && "$h" -Qua 2>/dev/null
+}
+
+case "$1" in
+    check)
+        list=$({ repo_updates; aur_updates; } | awk 'NF' | sort -u)
+        n=$(printf '%s\n' "$list" | grep -c .)
+        printf '%s\n' "$n"
+        [ "$n" -gt 0 ] && printf '%s\n' "$list"
+        ;;
+    upgrade)
+        h=$(helper)
+        if [ -n "$h" ]; then up="$h -Syu"; else up="sudo pacman -Syu"; fi
+        run="printf '\033[1;32m[ AUGMENTED ] SYSTEM UPGRADE\033[0m\n\n'; $up; ec=\$?; echo; printf '\033[1;36m>> upgrade finished (exit %s). press ENTER to close.\033[0m ' \"\$ec\"; read _"
+        term=""
+        for t in "$TERMINAL" kitty foot wezterm alacritty cool-retro-term konsole gnome-terminal xterm; do
+            [ -n "$t" ] && command -v "$t" >/dev/null 2>&1 && { term="$t"; break; }
+        done
+        [ -z "$term" ] && { notify-send "AUR upgrade" "No terminal emulator found" 2>/dev/null; exit 1; }
+        case "$term" in
+            kitty|foot)     setsid "$term" sh -c "$run" >/dev/null 2>&1 & ;;
+            wezterm)        setsid "$term" start -- sh -c "$run" >/dev/null 2>&1 & ;;
+            gnome-terminal) setsid "$term" -- sh -c "$run" >/dev/null 2>&1 & ;;
+            *)              setsid "$term" -e sh -c "$run" >/dev/null 2>&1 & ;;
+        esac
+        ;;
+    *)
+        echo "usage: aur {check|upgrade}" >&2
+        exit 2
+        ;;
+esac

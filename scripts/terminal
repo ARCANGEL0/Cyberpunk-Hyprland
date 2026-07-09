@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+export QT_QPA_PLATFORM=wayland
+export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
+
+CRTJSON="$HOME/.config/hypr/themes/cyberpunk/assets/cool-retro-term/netrunner.json"
+CRTCONF="$HOME/.config/cool-retro-term/cool-retro-term.conf"
+
+if command -v jq >/dev/null 2>&1 && [ -f "$CRTJSON" ]; then
+  mkdir -p "$(dirname "$CRTCONF")"
+  {
+    echo "[General]"
+    jq -r 'to_entries[] | select(.key!="name" and .key!="version") | "\(.key)=\(.value)"' "$CRTJSON"
+  } > "$CRTCONF"
+fi
+
+exec cool-retro-term --profile netrunner "$@"

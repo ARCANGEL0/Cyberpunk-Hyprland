@@ -1,0 +1,48 @@
+#!/usr/bin/bash
+#  apply-theme script for the Cyberpunk Hyprland theme.
+# applies the gtk icon theme, the kvantum theme, the window decoration, the gtk css and the kitty config. 
+set -u
+AUG="$HOME/.config/hypr/themes/cyberpunk"
+GTK="$AUG/assets/gtk"
+
+# ── icon theme: symlink it into the icon search path under our own name ──
+ICON_NAME="iconpack"
+mkdir -p "$HOME/.local/share/icons"
+ln -sfn "$GTK/iconpack" "$HOME/.local/share/icons/$ICON_NAME"
+
+# ── GTK 3 and 4: dark base theme + icons, and link in gtk.css glass tweaks
+for v in 3.0 4.0; do
+    d="$HOME/.config/gtk-$v"; mkdir -p "$d"
+    cat > "$d/settings.ini" <<EOF
+[Settings]
+gtk-theme-name=Adwaita-dark
+gtk-icon-theme-name=$ICON_NAME
+gtk-application-prefer-dark-theme=1
+gtk-cursor-theme-name=neurodance
+EOF
+    ln -sfn "$GTK/gtk.css" "$d/gtk.css"
+done
+
+if command -v gsettings >/dev/null 2>&1; then
+    gsettings set org.gnome.desktop.interface icon-theme "$ICON_NAME" 2>/dev/null
+    gsettings set org.gnome.desktop.interface gtk-theme    "Adwaita-dark" 2>/dev/null
+    gsettings set org.gnome.desktop.interface color-scheme "prefer-dark" 2>/dev/null
+    gsettings set org.gnome.desktop.interface cursor-theme "neurodance" 2>/dev/null
+fi
+
+KV_NAME="Daemon"
+KV_SRC="$GTK/DaemonKvantum"
+KVDIR="$HOME/.config/Kvantum/$KV_NAME"
+rm -rf "$HOME/.config/Kvantum/daemon-2.0"
+mkdir -p "$KVDIR"
+cp -f "$KV_SRC/$KV_NAME.kvconfig" "$KVDIR/$KV_NAME.kvconfig"
+cp -f "$KV_SRC/$KV_NAME.svg"      "$KVDIR/$KV_NAME.svg"
+cat > "$HOME/.config/Kvantum/kvantum.kvconfig" <<EOF
+[General]
+theme=$KV_NAME
+EOF
+
+mkdir -p "$HOME/.config/kitty"
+ln -sfn "$AUG/assets/kitty/kitty.conf" "$HOME/.config/kitty/kitty.conf"
+
+exit 0

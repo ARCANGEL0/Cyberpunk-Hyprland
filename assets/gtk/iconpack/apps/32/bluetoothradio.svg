@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   height="48"
+   width="48"
+   version="1.1"
+   id="svg6"
+   sodipodi:docname="bluetooth.svg"
+   inkscape:version="1.2.1 (9c6d41e410, 2022-07-14)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs10" />
+  <sodipodi:namedview
+     id="namedview8"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="false"
+     inkscape:zoom="4.9166667"
+     inkscape:cx="24"
+     inkscape:cy="24.101695"
+     inkscape:window-width="1920"
+     inkscape:window-height="1002"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg6" />
+  <ellipse
+     cx="24"
+     cy="24"
+     fill="#5e81ac"
+     opacity="0.99"
+     id="circle2"
+     rx="20.999998"
+     ry="21"
+     style="stroke-width:1.58694" />
+  <path
+     d="m 25.353811,26.707621 2.707621,2.707621 -2.707621,2.70762 z m 0,-10.830483 2.707621,2.707621 -2.707621,2.707621 z M 22.64619,9.5593567 V 20.389839 L 18.133489,15.877138 16.328409,17.682219 22.64619,24 l -6.317781,6.317782 1.80508,1.80508 4.512701,-4.512701 V 38.440644 L 31.671593,29.415242 26.256351,24 31.671593,18.584759 Z"
+     fill="#ffffff"
+     id="path4"
+     style="stroke-width:0.90254" />
+</svg>

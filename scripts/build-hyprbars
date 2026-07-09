@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# M a d e  b y:
+# ╔═════════════════════════════════════════════════════════════════════════╗
+# ║   ██████    ████████      ████████  ██      ██  ██            ██████    ║
+# ║ ██ ░░░░░██  ██░░░░░░██  ██ ░░░░░░░░  ░██  ██ ░░ ██░         ██ ░░░░░██  ║
+# ║ ██████████░ ████████ ░░ ██░            ░██ ░░   ██░         ██░     ██░ ║
+# ║ ██░░░░░░██░ ██░░░░██░   ██░           ██ ░██    ██░         ██░     ██░ ║
+# ║ ██░     ██░ ██░    ░██   ░████████  ██ ░░  ░██  ██████████   ░██████ ░░ ║
+# ╚═════════════════════════════════════════════════════════════════════════╝ 
+#═══════════════════════════════════════════════════════════════════════════════
+#  CYBERPUNK 2077 · NIGHT CITY  —  Hyprland netrunner rice · installer
+# ═══════════════════════════════════════════════════════════════════════════════
+# ─────────────────────────────────────────────────────────────────────────────
+#  build-hyprbars
+# a fork and custom edit of the hyprbars plugin for Hyprland, which adds custom titlebars to windows. this script builds the plugin and hot-reloads it into the running Hyprland process. 
+# customizing to fit that beleved shape of cyberpunk 2077, with the neon glow and the cut-corner frames. the plugin is optional, the rest of the theme works fine without it.
+# ─────────────────────────────────────────────────────────────────────────────
+set -e
+DIR="$HOME/.config/hypr/themes/cyberpunk/assets/cyberbars"
+SO="$DIR/hyprbars.so"
+
+if ! pkg-config --exists hyprland; then
+    echo "!! hyprland.pc not found — install Hyprland dev headers."; exit 1
+fi
+HVER="$(pkg-config --modversion hyprland)"
+# the plugin source follows Hyprland's 0.55.x headers (it includes things like
+# <hyprland/src/config/shared/parserUtils/ParserUtils.hpp>, which only exists from
+# 0.55 on). so if you have below 0.55, it won't work.
+
+HMIN="0.55.0"
+if [ "$(printf '%s\n%s\n' "$HMIN" "$HVER" | sort -V | head -1)" != "$HMIN" ]; then
+    echo "!! this hyprbars plugin needs Hyprland >= $HMIN, but you have $HVER."
+    echo "   Update Hyprland (>= $HMIN), then re-run: scripts/build-hyprbars"
+    echo "   (the rest of the theme works fine without it — you just lose the custom titlebars.)"
+    exit 3
+fi
+RUNVER="$(hyprctl version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)"
+if [ -n "$RUNVER" ] && [ "$RUNVER" != "$HVER" ]; then
+    echo "!! VERSION MISMATCH: headers are Hyprland $HVER but the RUNNING Hyprland is $RUNVER."
+    echo "   A plugin must match the running compositor EXACTLY. You most likely updated"
+    echo "   Hyprland but haven't restarted it — LOG OUT & BACK IN (or reboot), then re-run"
+    echo "   scripts/build-hyprbars. (Building anyway, but the load below will fail.)"
+fi
+
+echo ":: building against Hyprland $HVER"
+if [ ! -d "$DIR" ]; then
+    echo "!! hyprbars source missing at $DIR"
+    echo "   (the theme must live at ~/.config/hypr/themes/cyberpunk — run install.sh to link it there)"
+    exit 1
+fi
+cd "$DIR"
+make clean 2>/dev/null || true
+make all
+
+if [ ! -f "$SO" ]; then echo "!! build produced no hyprbars.so"; exit 1; fi
+HYPRBIN="$(command -v Hyprland 2>/dev/null || echo /usr/bin/Hyprland)"
+NEEDSYM="_ZTVN6Config6Values11CColorValueE" 
+if command -v nm >/dev/null 2>&1 && [ -r "$HYPRBIN" ]; then
+    if ! nm -D "$HYPRBIN" 2>/dev/null | grep -q "$NEEDSYM"; then
+        echo "!! Your Hyprland ($HYPRBIN, running $RUNVER) does NOT export the config-value"
+        echo "   symbols this plugin needs (e.g. Config::Values::CColorValue) — it cannot load."
+        echo "   This plugin is built for Hyprland 0.55.2's config API. Fixes:"
+        echo "     • if you just updated, LOG OUT & BACK IN so the running binary matches, then re-run"
+        echo "   (the rest of the rice works fine without the custom titlebars.)"
+        exit 4
+    fi
+fi
+
+hyprctl plugin unload "$SO" >/dev/null 2>&1 || true
+if out="$(hyprctl plugin load "$SO" 2>&1)" && ! echo "$out" | grep -qiE 'could not|undefined symbol|error'; then
+    echo ":: loaded $SO"
+else
+    echo "!! load failed: $out"
+    echo "   If it's 'undefined symbol', the RUNNING Hyprland doesn't match this build —"
+    echo "   restart Hyprland (log out/in or reboot) so it's the same 0.55.2 you built against."
+fi

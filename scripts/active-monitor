@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+hyprctl monitors -j | jq -r '
+  (map(select(.focused))[0] // map(select(.primary))[0] // .[0]) |
+  "\(.name) \(.x) \(.y) \(.width) \(.height)"
+'

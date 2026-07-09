@@ -1,0 +1,144 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+###############################################################################
+# NETRUNNER TERMINAL INSTALLATION
+# Adds a cool-retro-term theme as a custom profile automatically.
+###############################################################################
+
+DB_DIR="$HOME/.local/share/cool-retro-term/cool-retro-term/QML/OfflineStorage/Databases"
+THEME_FILE="$HOME/.config/hypr/themes/cyberpunk/assets/cool-retro-term/netrunner.json"
+
+###############################################################################
+# Dependency checks
+###############################################################################
+
+for cmd in jq sqlite3 find; do
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+        echo "Error: '$cmd' is not installed."
+        exit 1
+    fi
+done
+
+###############################################################################
+# Database checks
+###############################################################################
+
+if [[ ! -d "$DB_DIR" ]]; then
+    echo "Error: Database directory not found:"
+    echo "  $DB_DIR"
+    echo
+    echo "Run cool-retro-term at least once first."
+    exit 1
+fi
+
+DB_PATH=$(find "$DB_DIR" -type f -name "*.sqlite" | head -n 1)
+
+if [[ -z "$DB_PATH" ]]; then
+    echo "Error: No sqlite database found in:"
+    echo "  $DB_DIR"
+    exit 1
+fi
+
+echo "Using database: $DB_PATH"
+
+###############################################################################
+# Theme checks
+###############################################################################
+
+if [[ ! -f "$THEME_FILE" ]]; then
+    echo "Error: Theme file not found:"
+    echo "  $THEME_FILE"
+    exit 1
+fi
+
+if ! jq empty "$THEME_FILE" >/dev/null 2>&1; then
+    echo "Error: Theme file contains invalid JSON."
+    exit 1
+fi
+
+NAME=$(jq -r '.name // empty' "$THEME_FILE")
+
+if [[ -z "$NAME" ]]; then
+    echo "Error: Theme JSON must contain a 'name' field."
+    exit 1
+fi
+
+###############################################################################
+# Build profile object
+###############################################################################
+
+OBJ_STRING=$(
+    jq -c 'del(.name, .version)' "$THEME_FILE"
+)
+
+NEW_PROFILE=$(
+    jq -n \
+        --arg text "$NAME" \
+        --arg obj_string "$OBJ_STRING" \
+        '{
+            text: $text,
+            obj_string: $obj_string,
+            builtin: false
+        }'
+)
+
+###############################################################################
+# Read existing profiles
+###############################################################################
+
+EXISTING_PROFILES=$(
+    sqlite3 "$DB_PATH" \
+    "SELECT value FROM settings WHERE setting='_CUSTOM_PROFILES';"
+)
+
+if [[ -z "${EXISTING_PROFILES:-}" ]]; then
+    EXISTING_PROFILES='[]'
+fi
+
+###############################################################################
+# Validate existing data
+###############################################################################
+
+if ! echo "$EXISTING_PROFILES" | jq empty >/dev/null 2>&1; then
+    echo "Warning: Existing _CUSTOM_PROFILES is not valid JSON."
+    echo "Resetting to empty array."
+    EXISTING_PROFILES='[]'
+fi
+
+###############################################################################
+# Remove existing profile with same name (avoids duplicates)
+###############################################################################
+
+UPDATED_PROFILES=$(
+    echo "$EXISTING_PROFILES" |
+    jq \
+        --arg name "$NAME" \
+        --argjson new "$NEW_PROFILE" '
+            map(select(.text != $name))
+            + [$new]
+        '
+)
+
+###############################################################################
+# Escape for SQLite
+###############################################################################
+
+ESCAPED_PROFILES=$(
+    printf '%s' "$UPDATED_PROFILES" |
+    sed "s/'/''/g"
+)
+
+###############################################################################
+# Update database
+###############################################################################
+
+sqlite3 "$DB_PATH" "
+INSERT OR REPLACE INTO settings (setting, value)
+VALUES ('_CUSTOM_PROFILES', '$ESCAPED_PROFILES');
+"
+
+echo
+echo "✓ Netrunner Profile installed successfully"
+echo "  Name: $NAME"

@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+SOCK="$XDG_RUNTIME_DIR/astal/cyberpunk.sock"
+
+exec 9>"/tmp/hypr-record.lock"
+flock -w 2 9 || exit 0          # wait up to 2s for the lock, then just give up instead of stacking
+
+if pgrep -x wf-recorder >/dev/null; then
+    # it's recording -> stop it. SIGINT (not -9) so wf-recorder can finish writing the mp4 properly
+    pkill -INT -x wf-recorder
+    echo "record-stop" | socat - UNIX-CONNECT:"$SOCK" 2>/dev/null
+else
+    echo "record-region" | socat - UNIX-CONNECT:"$SOCK" 2>/dev/null
+fi
