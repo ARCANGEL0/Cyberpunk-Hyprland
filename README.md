@@ -30,7 +30,7 @@
       <img width="1009" height="748" alt="2026-08-20_21-09-27" src="https://github.com/user-attachments/assets/85fc85fa-6130-4c14-bb7b-eb20a10da8c6" />
     </td>
     <td>
-https://github.com/user-attachments/assets/86e78d03-7522-4671-9e63-a67953ab1e7e
+<video src="https://github.com/user-attachments/assets/86e78d03-7522-4671-9e63-a67953ab1e7e"></video>
     </td>
   </tr>
 </table>
@@ -98,42 +98,41 @@ This is my attempt to recreate Cyberpunk 2077 UI entirely on **Hyprland**, using
   <tr>
     <td width="50%" align="center">
       <b>KILL MODE</b><br/>
-https://github.com/user-attachments/assets/d40443b8-bd50-45cf-b63f-9b31fc5d6b03
+      <video src="https://github.com/user-attachments/assets/d40443b8-bd50-45cf-b63f-9b31fc5d6b03"></video>
     </td>
     <td width="50%" align="center">
       <b>CONTROL MODALS</b><br/>
-https://github.com/user-attachments/assets/9d151f4f-9913-4d86-8319-0def42cf349d
+            <video src="https://github.com/user-attachments/assets/9d151f4f-9913-4d86-8319-0def42cf349d"></video>
     </td>
   </tr>
   <tr>
     <td width="50%" align="center">
       <b>APPS LAUNCHER</b><br/>
-https://github.com/user-attachments/assets/31ce5454-1a20-466d-a249-3eec409fb46a
-    </td>
+      <video src="https://github.com/user-attachments/assets/31ce5454-1a20-466d-a249-3eec409fb46a"></video></td>
     <td width="50%" align="center">
       <b>MUSIC PLAYER</b><br/>
-https://github.com/user-attachments/assets/c0c2fc66-81d6-441c-9102-6409cc79ab2a
+<video src="https://github.com/user-attachments/assets/c0c2fc66-81d6-441c-9102-6409cc79ab2a"></video>
     </td>
   </tr>
    <tr>
     <td width="50%" align="center">
       <b>SCREENSHOT / CAPTURE</b><br/>
-https://github.com/user-attachments/assets/1f0f25c0-4868-45c7-9099-ca9498c73dd3
+<video src="https://github.com/user-attachments/assets/1f0f25c0-4868-45c7-9099-ca9498c73dd3"></video>
     </td>
          <td width="50%" align="center">
       <b>MESSAGES / APP TRAY
 </b><br/>
-https://github.com/user-attachments/assets/3ef2f30b-d5e6-4026-add8-aca9ae58b98d
+<video src="https://github.com/user-attachments/assets/3ef2f30b-d5e6-4026-add8-aca9ae58b98d"></video>
     </td>
   </tr>
   <tr>
     <td width="50%" align="center">
       <b>STREET CRED REPUTATION || AUR PACKAGE LISTENER ~~ UPDATES </b><br/>
-https://github.com/user-attachments/assets/401eb9e9-2a56-4b67-9afe-422d413be67d
+<video src="https://github.com/user-attachments/assets/401eb9e9-2a56-4b67-9afe-422d413be67d"></video>
     </td>
         <td width="50%" align="center">
       <b>RipperCPU | Process manager </b><br/>
-https://github.com/user-attachments/assets/7fe5a447-7135-4949-9504-6a8de8fd0e35
+<video src="https://github.com/user-attachments/assets/7fe5a447-7135-4949-9504-6a8de8fd0e35"></video>
 </td>
   </tr>
 </table>
