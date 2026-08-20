@@ -200,10 +200,16 @@ mkdir -p "$HOME/.config/qylock"
 echo "netwatch" > "$HOME/.config/qylock/theme"
 IDLECONF="$HOME/.config/hypr/hypridle.conf"
 if [ -f "$IDLECONF" ]; then
-  sed -i "s#^  lock_cmd = .*#  lock_cmd = $LOGINDST/lock.sh#" "$IDLECONF"
+  if grep -q "lock_cmd" "$IDLECONF"; then
+    sed -i "s#^\( *\)lock_cmd = .*#\1lock_cmd = $LOGINDST/lock.sh#" "$IDLECONF"
+  else
+    sed -i "/^general {/a\\  lock_cmd = $LOGINDST/lock.sh" "$IDLECONF"
+  fi
   ok "hypridle lock_cmd → $LOGINDST/lock.sh"
 else
-  warn "hypridle.conf not found |::| add lock_cmd = $LOGINDST/lock.sh manually"
+  mkdir -p "$(dirname "$IDLECONF")"
+  printf 'general {\n  lock_cmd = %s/lock.sh\n  before_sleep_cmd = loginctl lock-session\n}\n' "$LOGINDST" > "$IDLECONF"
+  ok "created $IDLECONF with lock_cmd → $LOGINDST/lock.sh"
 fi
 command -v quickshell >/dev/null || warn "quickshell binary missing |::| login screen will not launch"
 
