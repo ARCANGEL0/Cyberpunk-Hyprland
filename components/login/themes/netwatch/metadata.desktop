@@ -1,0 +1,7 @@
+[SddmGreeterTheme]
+Name=netwatch
+Description=Netwatch Terminal Lockscreen
+Type=sddm-theme
+MainScript=Main.qml
+ConfigFile=theme.conf
+QtVersion=6

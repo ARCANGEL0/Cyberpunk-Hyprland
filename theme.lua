@@ -15,7 +15,7 @@ hl.exec_cmd(os.getenv("HOME") .. "/.local/bin/ags quit -i cyberpunk 2>/dev/null"
 hl.exec_cmd("sleep 1 && " .. cyberpunk .. "/scripts/launch-theme")
 hl.exec_cmd(cyberpunk .. "/scripts/ws pin")
 hl.exec_cmd("awww img " .. os.getenv("HOME") .. "/.config/hypr/themes/cyberpunk/assets/img/lucy_wallpaper.png")
-once(cyberpunk .. "/quickshell/lock.sh")
+once(cyberpunk .. "/components/login/lock.sh")
 
 hl.exec_cmd("mkdir -p " .. os.getenv("HOME") .. "/.config/kitty && ln -sfn " .. cyberpunk .. "/assets/kitty/kitty.conf " .. os.getenv("HOME") .. "/.config/kitty/kitty.conf")
 hl.exec_cmd("mkdir -p " .. os.getenv("HOME") .. "/.local/share/icons && ln -sfn " .. cyberpunk .. "/assets/gtk/iconpack " .. os.getenv("HOME") .. "/.local/share/icons/iconpack")
@@ -64,7 +64,7 @@ hl.define_submap("kill", function()
     hl.bind("escape", hl.dsp.exec_cmd(cyberpunk .. "/scripts/overkill exit"))
 end)
 
-hl.bind(themeMod .. " + L", hl.dsp.exec_cmd(cyberpunk .. "/quickshell/lock.sh"))
+hl.bind(themeMod .. " + L", hl.dsp.exec_cmd(cyberpunk .. "/components/login/lock.sh"))
 hl.bind("CTRL + SHIFT + ALT + r", hl.dsp.exec_cmd(cyberpunk .. "/scripts/restart"))
 hl.bind("SUPER + CTRL + Delete", hl.dsp.exec_cmd("hyprctl reload"))
 

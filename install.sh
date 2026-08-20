@@ -182,6 +182,31 @@ else
   warn "bundled fonts missing at $FONTSRC |::| theme text will fall back to sans-serif."
 fi
 
+hdr "LOGIN SCREEN"
+LOGINSRC="$THEME/components/login"
+LOGINDST="$CANON/components/login"
+if [ "$THEME" != "$CANON" ]; then
+  mkdir -p "$LOGINDST"
+  cp -rf "$LOGINSRC"/* "$LOGINDST"/
+  ok "login theme copied → $LOGINDST"
+else
+  LOGINDST="$LOGINSRC"
+fi
+if [ -f "$THEME/assets/img/lucy_lock.mp4" ]; then
+  cp -f "$THEME/assets/img/lucy_lock.mp4" "$LOGINDST/themes/netwatch/bg.mp4"
+fi
+chmod +x "$LOGINDST/lock.sh" 2>/dev/null
+mkdir -p "$HOME/.config/qylock"
+echo "netwatch" > "$HOME/.config/qylock/theme"
+IDLECONF="$HOME/.config/hypr/hypridle.conf"
+if [ -f "$IDLECONF" ]; then
+  sed -i "s#^  lock_cmd = .*#  lock_cmd = $LOGINDST/lock.sh#" "$IDLECONF"
+  ok "hypridle lock_cmd → $LOGINDST/lock.sh"
+else
+  warn "hypridle.conf not found |::| add lock_cmd = $LOGINDST/lock.sh manually"
+fi
+command -v quickshell >/dev/null || warn "quickshell binary missing |::| login screen will not launch"
+
 hdr "PACMAN HOOK"
 HOOKSRC="$THEME/assets/pacman/cyberpunk-pkg-notify.hook"
 HOOKDST="/etc/pacman.d/hooks/cyberpunk-pkg-notify.hook"
