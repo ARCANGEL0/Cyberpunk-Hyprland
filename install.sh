@@ -23,7 +23,7 @@ REPO=(
   gjs grim wf-recorder wl-clipboard networkmanager bluez-utils curl
   wireplumber playerctl brightnessctl power-profiles-daemon upower
   hypridle socat jq rofi libnotify sassc kitty kvantum kvantum-qt5 wget fuse2 sqlite3 pacman-contrib awww
-  base-devel pkgconf cmake cpio gcc lib32-libelf
+  base-devel pkgconf cmake cpio gcc lib32-libelf lib32-glibc glibc
   pipewire pipewire-audio pipewire-pulse libpulse mpv ffmpeg sox
   ttf-jetbrains-mono ttf-firacode-nerd ttf-nerd-fonts-symbols
   lib32-gnutls dnsmasq pipewire-alsa ffmpeg4.4 gst-plugin-pipewire lib32-nettle
