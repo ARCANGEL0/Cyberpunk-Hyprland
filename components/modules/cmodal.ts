@@ -401,7 +401,7 @@ const WifiCtrl = () => {
     const wheelList = () => st.nets.map((n) => ({ label: n.ssid, badge: n.active ? "CONNECTED" : `${n.sig}%`, glyph: null, data: n }))
     ctrl = createModal({
         name: "wifi", tabTitle: "NETWORK", W: 320, H: 380, yaw: 15, pitch: 0, roll: 0, anchorRight: true, noBuiltinClose: true, noGlass: true, keymode: Keymode.ON_DEMAND,
-        onOpen: () => { st.selected = null; st.scroll = 0; refresh(); openWheel({ title: "NETWORK", subtitle: "// NETWATCH :: TRACING FOR CONNECTIONSG", footer: "[ SCROLL / ARROWS ] NAVIGATE   [ ENTER / CLICK ] CONNECT   [ ESC ] CLOSE", searchable: true, reserveX: 600, onActivate: (n) => { if (!n.active) sh(`nmcli dev wifi connect "${n.ssid}"`).then(() => timeout(2200, refresh)) }, onFocus: (n) => { st.selected = n; ctrl.requestDraw() }, onReset: () => ctrl.close(), emptyText: "// NO NETWORKS" }, wheelList()) },
+        onOpen: () => { st.selected = null; st.scroll = 0; refresh(); openWheel({ title: "NETWORK", subtitle: "// NETWATCH :: TRACING FOR CONNECTIONS", footer: "[ SCROLL / ARROWS ] NAVIGATE   [ ENTER / CLICK ] CONNECT   [ ESC ] CLOSE", searchable: true, reserveX: 600, onActivate: (n) => { if (!n.active) sh(`nmcli dev wifi connect "${n.ssid}"`).then(() => timeout(2200, refresh)) }, onFocus: (n) => { st.selected = n; ctrl.requestDraw() }, onReset: () => ctrl.close(), emptyText: "// NO NETWORKS" }, wheelList()) },
         onClose: () => { closeWheel(); st.selected = null },
         poll: () => refresh(), pollMs: 5000,
         draw: (ctx, g) => {
