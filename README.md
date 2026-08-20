@@ -12,7 +12,7 @@
   <img src="https://img.shields.io/badge/ARCH_LINUX-ff2d3d?style=for-the-badge&logo=arch-linux&logoColor=white" />
 </p>
 
-### **A Hyprland *netrunner* rice with 3D-tilted cairo HUD and components on AGS v3 / Astal**
+### **A Hyprland *netrunner* rice with built on AGS v3 / Astal**
 
 
 </div>
@@ -21,34 +21,36 @@
 
 # // Theme Showcase
 
-<table border="0">
-    <tr><img src="preview/preview.png" width="100%"/></tr>
+<table border="0">e
+    <tr> 
+      <img width="1920" height="1080" alt="2026-08-20_17-23-36" src="https://github.com/user-attachments/assets/a80ba225-08e2-40e9-bbaf-3032739a9fef" />
+    </tr>
   <tr>
-    <td><img src="preview/apps.png" width="100%"/></td>
-    <td><img src="preview/login.png" width="100%"/></td>
-    <td></td>
+    <td>
+      <img width="1009" height="748" alt="2026-08-20_21-09-27" src="https://github.com/user-attachments/assets/85fc85fa-6130-4c14-bb7b-eb20a10da8c6" />
+    </td>
+    <td>
+https://github.com/user-attachments/assets/86e78d03-7522-4671-9e63-a67953ab1e7e
+    </td>
   </tr>
 </table>
 
 ### Video preview
 
-
-
-https://github.com/user-attachments/assets/6f6ee38d-8318-4954-8c79-27546fb85eb6
-
+https://github.com/user-attachments/assets/f8affc37-d25d-404c-bd02-df04892cfec8
 
 ---
 
 
-## ⌁ Welcome to Night City::
+## ⌁ Welcome to Night City, Choom. ::
 
 <img src="preview/johnny.gif" align="right" width="30%" style="margin-left: 20px;">
 
-This is a complete Cyberpunk 2077 themed desktop for **Hyprland**. The HUD is made with AGS script (`core.ts`) that draws everything with usage of cairo to create perspective-tilted panels, angular red-neon glass, segmented health bars, and glitch transitions to completely mimick the in-game UI such as animations and components aswell as much as possible.
+This is my attempt to recreate Cyberpunk 2077 UI entirely on **Hyprland**, using AGS/Astal to build the HUD similar to the in-game overlay including the widgets, minimaps, and more themed features.
 
 <br clear="right"/>
 
-### Highlights
+### About each component
 
 - **Health bars** -> The in-game UI bars meant for Health, Stamina, RAM and Level are copied to provide system monitors:
   - The level badge shows the current active workspace, like [1], [2] and etc.
@@ -60,79 +62,79 @@ This is a complete Cyberpunk 2077 themed desktop for **Hyprland**. The HUD is ma
 - **Corner widgets** -> Renders the same UI style of the game UI shortcuts like Radio, Vehicle, Phone, Cyberware item etc
   -  Radio shortcut as Music Player (Toggleable by clicking, or SUPER + SHIFT + O)
   -  System controls for rest of shortcuts like Brightness, Volume, Microphone, Wifi, Bluetooth, Record Screen
+  - App tray/Notification center recreated on V's contacts HUD.
+    -> the MESSAGES will show the last notifications and their respective apps
+    -> the APPS Tray is shows the tray for active apps along with custom tilted context menus
+
     
 - **Minimap** -> Recreates the Minimap from the HUD exactly the same as in-game, showing a random location from `city.json`  
-  -  Weather widget below minimap: retrieves the weather forecast for the next 7 days from location at `city.json` using Open Meteo API (Right click to change city location)
+  -  Weather widget below minimap: retrieves the weather forecast for the next 7 days from location at `city.json` using Open Meteo API (Right click to change city location, and double click to see the full forecast)
   -  Network notification: Displays current WiFi/Etherned connected and SSID, or Offline Status along with Upload/Download speed
-
+  -  Market Feed: Shows an interactive widget that displays values and charts for Stocks, Cryptocoins and Trending news. Double-clicking it opens the ''terminal'' that mimicks V computer where you can access websites and buy cars etc, but for market and news.
+    
 - **Weapon/Item** -> The bottom-right hud that shows weapon/ammo in-game
   -  Shows App Launcher, with a custom icon gathered from the design concepts of Cyberpunk 2077
   -  App Launcher shows a custom launcher that mimicks the Kiroshi Scanner, with audio and animations and the same shape of the 'quickhacks' frames.
-
-- **Messages/Contacts** -> App tray/Notification center recreated on V's contacts HUD.
-  - the MESSAGES will show the last notifications and their respective apps
-  - the APPS Tray is shows the tray for active apps along with custom tilted context menus
 
 - **Pacman hook** -> Displays V's streetcred reputation frame
   - Whenever a new pacman pkg is added, it will show animated frame as "PKG Installed\nVersion XXX" 
   - Whenever AUR packages have upgrades available, it will show update notifications.
 
 - **KILL MODE** -> Starts an animated overlay similar to Kiroshi aswell, click on any app to forcekill it (Toggleable by SUPER+SHIFT+K)
+  
 - **Screen Recording** -> Starts recording the active screen, and with the same HUD components from in-game when acessing cameras from quickhacks (Toggleable by SUPER+SHIFT+R)
-- **Music player** -> Opens/Closes the Media Player, designed with a tilted glassy-look frame similar to in-game panels. (Toggleable by SUPER+SHIFT+O)
-- **Quickshell lockscreen** -> ANimated loginscreen with qs, simulating a NetWatch controlled terminal.
-- **cool-retro-term** -> Autoinstalls Cool-Retro-Term by Swordfish90, and sets a 'Netrunner' profile for default, in same style of the terminal windows in-game, along with an optional fish installation and 'SAMURAI' banner.
+
+- **Music player** -> Opens/Closes the Media Player, designed pixel-perfect exact as the RADIOPORT in the game. (Toggleable by SUPER+SHIFT+O)
+  
+- **Quickshell lockscreen** -> ANimated loginscreen with qs.
+ 
+- **Terminals** -> Installs Rio Terminal for 'glassy cyan' cyber terminals, and Cool-Retro-Term by Swordfish90, and sets a 'Netrunner' profile for default, in same style of the terminal windows in-game, along with an optional fish installation and 'SAMURAI' banner.
 
 ---
 
 ## ⌁ Video previews
 
- 
-
 <table>
   <tr>
     <td width="50%" align="center">
       <b>KILL MODE</b><br/>
-      <video src="https://github.com/user-attachments/assets/306a4b40-8a75-401d-9d25-260ab38747c8" controls width="100%"></video>
+https://github.com/user-attachments/assets/d40443b8-bd50-45cf-b63f-9b31fc5d6b03
     </td>
     <td width="50%" align="center">
       <b>CONTROL MODALS</b><br/>
-      <video src="https://github.com/user-attachments/assets/b10e6f94-5f49-4244-93ce-dcca43e5161b" controls width="100%"></video>
+https://github.com/user-attachments/assets/9d151f4f-9913-4d86-8319-0def42cf349d
     </td>
   </tr>
-
   <tr>
     <td width="50%" align="center">
       <b>APPS LAUNCHER</b><br/>
-      <video src="https://github.com/user-attachments/assets/8c4d7d37-1d06-470b-8dcc-e8b26a1b2ec6" controls width="100%"></video>
+https://github.com/user-attachments/assets/31ce5454-1a20-466d-a249-3eec409fb46a
     </td>
     <td width="50%" align="center">
       <b>MUSIC PLAYER</b><br/>
-      <video src="https://github.com/user-attachments/assets/db41ab8e-e619-4be8-a367-f4e3152749f5" controls width="100%"></video>
+https://github.com/user-attachments/assets/c0c2fc66-81d6-441c-9102-6409cc79ab2a
     </td>
   </tr>
-
    <tr>
     <td width="50%" align="center">
       <b>SCREENSHOT / CAPTURE</b><br/>
-      <video src="https://github.com/user-attachments/assets/3e985d7e-dd04-4c15-b26f-9bbfb095bb59" controls width="100%"></video>
+https://github.com/user-attachments/assets/1f0f25c0-4868-45c7-9099-ca9498c73dd3
     </td>
          <td width="50%" align="center">
       <b>MESSAGES / APP TRAY
 </b><br/>
-      <video src="https://github.com/user-attachments/assets/f1de18a1-c5d1-4b0b-a7d7-06bc84b6521f" controls width="100%"></video>
+https://github.com/user-attachments/assets/3ef2f30b-d5e6-4026-add8-aca9ae58b98d
     </td>
   </tr>
-
   <tr>
     <td width="50%" align="center">
-      <b>STREET CRED REPUTATION || AUR PACKAGE LISTENER</b><br/>
-      <video src="https://github.com/user-attachments/assets/4ff47cae-8cbc-4f49-b74d-1baf99f0e4b5" controls width="100%"></video>
+      <b>STREET CRED REPUTATION || AUR PACKAGE LISTENER ~~ UPDATES </b><br/>
+https://github.com/user-attachments/assets/401eb9e9-2a56-4b67-9afe-422d413be67d
     </td>
-    <td width="50%" align="center">
-      <b>STREET CRED REPUTATION || AUR UPDATES</b><br/>
-      <video src="https://github.com/user-attachments/assets/c4ebdb24-8219-4c28-9107-d0954753da89" controls width="100%"></video>
-    </td>
+        <td width="50%" align="center">
+      <b>RipperCPU | Process manager </b><br/>
+https://github.com/user-attachments/assets/7fe5a447-7135-4949-9504-6a8de8fd0e35
+</td>
   </tr>
 </table>
 
@@ -141,8 +143,8 @@ This is a complete Cyberpunk 2077 themed desktop for **Hyprland**. The HUD is ma
 
 ## ⌁ Requirements
 
-- **Arch Linux** (the installer uses `pacman`)
-- **Hyprland ≥ 0.56** (this theme uses custom titlebars that need 0.56's plugin API; optional though, the rest of theme isn't affected)
+- **Arch Linux or based distros.**
+- **Hyprland ≥ 0.56**
 - An **AUR helper**: `yay` or `paru` (Always check PKGBUILD btw)
 - A running Hyprland session (so theming + first-run setup can apply)
 
@@ -151,22 +153,13 @@ This is a complete Cyberpunk 2077 themed desktop for **Hyprland**. The HUD is ma
 ## ⌁ Install
 
 ```bash
-git clone https://github.com/ARCANGEL0/Cyberpunk-Hyprland.git 
-cd Cyberpunk-Hyprland
+git clone https://github.com/ARCANGEL0/CyberArch-Dotfiles.git 
+cd CyberArch-Dotfiles 
 chmod +x install.sh
 ./install.sh
 ```
 
-The installer is interactive and will:
-
-1. **Dependencies** =>> scan + install missing repo and AUR packages.
-2. **AGS runtime** =>> Installs and symlink the binary and resolve astal/GJS imports.
-3. **Fonts** =>> install bundled Orbitron, Rajdhani, Quantico, Tektur, Play, Navine and Roboto.
-4. **Lockscreen** =>> set up quickshell, qt6, and PAM auth.
-5. **cool-retro-term** =>> download AppImage and configure the netrunner profile, and optionally installs fish shell.
-7. **Theme source** =>> prepend `$cyberpunk` + `source=` to `hyprland.conf`.
-8. **Conflicts** =>> scan and comment clashing keybinds, stale options, and overridden config blocks, to avoid keybinds being duplicated.
-9. **Apply** =>> Set the full theme for icons,cursor,kitty, kvantum, build the custom hyprbars plugin, and reload Hyprland.
+The installer will download any required dependencies, install the theme, quickshell and the necessary packages, along with optional features such as fish, GPU Terminals in theme style, and wallpapers. 
 
 ---
 
@@ -185,6 +178,7 @@ The theme modifier is **`$themeMod = SUPER + SHIFT`** (change it at the top of `
 | `SUPER + SHIFT + M` | Messages modal |
 | `SUPER + SHIFT + O` | Music player |
 | `SUPER + SHIFT + N` | Wi-Fi modal |
+| `SUPER + SHIFT + G` | Netterminal: See Stocks, Crypto or News |
 | `SUPER + SHIFT + X` | Dismiss Notifications |
 | `SUPER + SHIFT + U` | System Upgrade modal |
 | `SUPER + SHIFT + B` | Bluetooth modal |
@@ -227,14 +221,15 @@ The theme modifier is **`$themeMod = SUPER + SHIFT`** (change it at the top of `
 cyberpunk/
 ├─ core.ts              # HUD entry point (AGS / astal / GJS)
 ├─ theme.lua           # Hyprland full theme
-├─ install.sh          # interactive installer
+├─ install.sh          
 ├─ components/
-│  ├─ modules/         # every widget (monitors, sidepanel, dock, modals, anim, …)
+│  ├─ modules/         # The widgets and main components of the theme HD
+│  ├─ login/           # Quickshell login
 │  └─ style/           # cyber.scss and cyber.css
 ├─ scripts/            # launcher, screenshot, screenrecord, overkill, ws, terminal, and other used scripts.
 ├─ quickshell/         # Login screen using quickshell
-├─ city.json           # City.json with the provided location, used for minimap and weather forecast
-└─ assets/             # fonts, cursor, icons, kitty, kvantum, hyprbars, cool-retro-term
+├─ city.json           # Here is your saved location (starts by default in London,UK)
+└─ assets/             # fonts, cursor, icons, kitty, kvantum, hyprbars, and resources
 ```
 
 ## TODO List
@@ -246,6 +241,10 @@ cyberpunk/
   <br><img src="preview/streetcred.jpg" width="20%"/>
 - [x] Add more notification chips on HUD such as 'AUR Update Available!'.
 - [x] Redraw Music Player to match CP2077 Radioport + Now Playing toast animation.
+- [x] Add the 'KEYSTORE' Terminal and add new features
+- [x] Add Stocks and live news feed on Net Terminal
+- [x] Add custom wallpapers and new login
+- [x] Add the RipperDoc GUI or something similar
 <br>
 suggestions are welcome! :) 
 ---
