@@ -21,7 +21,7 @@
 
 # // Theme Showcase
 
-<table border="0">e
+<table border="0">
     <tr> 
       <img width="1920" height="1080" alt="2026-08-20_17-23-36" src="https://github.com/user-attachments/assets/a80ba225-08e2-40e9-bbaf-3032739a9fef" />
     </tr>
