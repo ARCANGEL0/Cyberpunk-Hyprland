@@ -401,7 +401,7 @@ const WifiCtrl = () => {
     const wheelList = () => st.nets.map((n) => ({ label: n.ssid, badge: n.active ? "CONNECTED" : `${n.sig}%`, glyph: null, data: n }))
     ctrl = createModal({
         name: "wifi", tabTitle: "NETWORK", W: 320, H: 380, yaw: 15, pitch: 0, roll: 0, anchorRight: true, noBuiltinClose: true, noGlass: true, keymode: Keymode.ON_DEMAND,
-        onOpen: () => { st.selected = null; st.scroll = 0; refresh(); openWheel({ title: "NETWORK", subtitle: "// NETWATCH — SCANNING", footer: "[ SCROLL / ARROWS ] NAVIGATE   [ ENTER / CLICK ] CONNECT   [ ESC ] CLOSE", searchable: true, reserveX: 600, onActivate: (n) => { if (!n.active) sh(`nmcli dev wifi connect "${n.ssid}"`).then(() => timeout(2200, refresh)) }, onFocus: (n) => { st.selected = n; ctrl.requestDraw() }, onReset: () => ctrl.close(), emptyText: "// NO NETWORKS" }, wheelList()) },
+        onOpen: () => { st.selected = null; st.scroll = 0; refresh(); openWheel({ title: "NETWORK", subtitle: "// NETWATCH :: TRACING FOR CONNECTIONSG", footer: "[ SCROLL / ARROWS ] NAVIGATE   [ ENTER / CLICK ] CONNECT   [ ESC ] CLOSE", searchable: true, reserveX: 600, onActivate: (n) => { if (!n.active) sh(`nmcli dev wifi connect "${n.ssid}"`).then(() => timeout(2200, refresh)) }, onFocus: (n) => { st.selected = n; ctrl.requestDraw() }, onReset: () => ctrl.close(), emptyText: "// NO NETWORKS" }, wheelList()) },
         onClose: () => { closeWheel(); st.selected = null },
         poll: () => refresh(), pollMs: 5000,
         draw: (ctx, g) => {
@@ -483,7 +483,7 @@ const BtCtrl = () => {
     const wheelList = () => st.devs.map((d) => ({ label: d.name, badge: d.connected ? "CONNECTED" : d.paired ? "PAIRED" : d.mac.slice(0, 8), glyph: null, data: d }))
     ctrl = createModal({
         name: "bt", tabTitle: "BLUETOOTH", W: 320, H: 380, yaw: 15, pitch: 0, roll: 0, anchorRight: true, noBuiltinClose: true, noGlass: true, keymode: Keymode.ON_DEMAND,
-        onOpen: () => { st.selected = null; st.scroll = 0; refresh(); if (st.on) timeout(800, scanBT); openWheel({ title: "BLUETOOTH", subtitle: "// KIROSHI — SCANNING", footer: "[ SCROLL / ARROWS ] NAVIGATE   [ ENTER / CLICK ] CONNECT   [ ESC ] CLOSE", searchable: true, reserveX: 600, onActivate: (d) => sh(`bluetoothctl ${d.connected ? "disconnect" : "connect"} ${d.mac}`).then(() => timeout(1800, refresh)), onFocus: (d) => { st.selected = d; ctrl.requestDraw() }, onReset: () => ctrl.close(), emptyText: "// NO DEVICES" }, wheelList()) },
+        onOpen: () => { st.selected = null; st.scroll = 0; refresh(); if (st.on) timeout(800, scanBT); openWheel({ title: "BLUETOOTH", subtitle: "// KIROSHI :: TRACING DEVICES", footer: "[ SCROLL / ARROWS ] NAVIGATE   [ ENTER / CLICK ] CONNECT   [ ESC ] CLOSE", searchable: true, reserveX: 600, onActivate: (d) => sh(`bluetoothctl ${d.connected ? "disconnect" : "connect"} ${d.mac}`).then(() => timeout(1800, refresh)), onFocus: (d) => { st.selected = d; ctrl.requestDraw() }, onReset: () => ctrl.close(), emptyText: "// NO DEVICES" }, wheelList()) },
         onClose: () => { closeWheel(); st.selected = null },
         poll: () => refresh(), pollMs: 5000,
         draw: (ctx, g) => {
@@ -989,10 +989,10 @@ const SysCtrl = (SW, SH) => {
 }
 const KEYBINDS = [
     ["SUPER + TAB", "APP LAUNCHER"], ["H", "HELP MENU"], ["Z", "HUD OVERLAY"], ["V", "VOLUME"],
-    ["I", "BRIGHTNESS"], ["U", "SYSTEM UPGRADE"], ["J", "DISMISS UPDATE"], ["M", "MICROPHONE"], ["O", "MUSIC PLAYER"], ["N", "NETWORKS"],
+    ["I", "BRIGHTNESS"], ["U", "SYSTEM UPGRADE"], ["J", "DISMISS UPDATE"], ["M", "MICROPHONE"],["G", "MARKETS"], ["O", "MUSIC PLAYER"], ["N", "NETWORKS"],
     ["B", "BLUETOOTH"], ["W", "FORECAST"], ["P", "POWER MENU"], ["Y", "BATTERY"],
     ["C", "CPU / RAM"], ["L", "LOCKSCREEN"], ["R", "SCREEN RECORD"], ["S", "SCREENSHOT"],
-    ["T", "TERMINAL"], ["K", "KILL MODE"], ["-", "TIME / TIMEZONE"], ["G", "MARKETS"],
+    ["T", "TERMINAL"], ["K", "KILL MODE"], ["-", "TIME / TIMEZONE"], 
 ]
 const drawKeyCap = (ctx, x, y, label, h) => {
     ctx.selectFontFace(TITLE, 0, 1); ctx.setFontSize(11); const tw = ctx.textExtents(label).width
