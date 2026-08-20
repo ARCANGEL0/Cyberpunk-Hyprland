@@ -8,7 +8,7 @@ Item {
 
     MediaPlayer {
         id: mediaplayer
-        source: "bg.mp4"
+        source: Qt.resolvedUrl("bg.mp4")
         autoPlay: true
         loops: MediaPlayer.Infinite
         videoOutput: videoOutput
