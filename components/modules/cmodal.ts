@@ -813,6 +813,7 @@ const SysCtrl = (SW, SH) => {
         cpu: 0, cores: [], cpuHist: [], memU: 0, memT: 1, memCache: 0, swapU: 0, swapT: 0, ramHist: [],
         up: "0.0", down: "0.0", upHist: [], downHist: [], temp: 0, mhz: 0, load: "—", uptime: "—",
         disks: [], procs: [], sel: "", selProc: null, scroll: 0, prevCpu: null, prevNet: null, aCpu: 0, aMem: 0,
+        tab: "task",
     }
     let ctrl
     const sample = () => {
@@ -892,7 +893,7 @@ const SysCtrl = (SW, SH) => {
         },
         onClose: () => { stopModalStats(); sysSndOff() },
         poll: refresh, pollMs: 900,
-        onScroll: (d) => { st.scroll = Math.max(0, Math.min(Math.max(0, st.procs.length - 1), st.scroll + d)); ctrl.requestDraw() },
+        onScroll: (d) => { if (st.tab === "task") { st.scroll = Math.max(0, Math.min(Math.max(0, st.procs.length - 1), st.scroll + d)); ctrl.requestDraw() } },
         draw: (ctx, g) => {
             const X = g.X, Y = g.Y, W = g.w, H = g.h
             const memF = st.memU / st.memT
@@ -924,14 +925,15 @@ const SysCtrl = (SW, SH) => {
             let hx = X + 46
             hx = pair(hx, `${st.cpu}`, "CPU", SYSY) + 34
             hx = pair(hx, `${Math.round(memF * 100)}`, "MEM", SYSC) + 34
-            const tabs = ["CORE ARRAY", "MEMORY", "NETWORK", "STORAGE", "PROCESSES"]
+            const tabs = [["TASK MANAGER", "task"], ["SYSTEM", "system"], ["INIT_DAEMON", "init"]]
             ctx.selectFontFace(TITLE, 0, 1); ctx.setFontSize(13)
-            let tw2 = tabs.reduce((a2, t) => a2 + ctx.textExtents(t).width + 30, 0)
+            let tw2 = tabs.reduce((a2, [t]) => a2 + ctx.textExtents(t).width + 30, 0)
             let tx3 = X + W / 2 - tw2 / 2
-            tabs.forEach((t, i) => {
-                const w2 = ctx.textExtents(t).width
-                txt(ctx, tx3, hy + 16, t, TITLE, 13, i === 0 ? SYSC : SYSR, i === 0 ? 0.98 : 0.72, 1)
-                if (i === 0) { ctx.setSourceRGBA(SYSC[0], SYSC[1], SYSC[2], 0.95); ctx.rectangle(tx3, hy + 23, w2, 2); ctx.fill() }
+            tabs.forEach(([t, id]) => {
+                const w2 = ctx.textExtents(t).width, active = st.tab === id
+                txt(ctx, tx3, hy + 16, t, TITLE, 13, active ? SYSC : SYSR, active ? 0.98 : 0.72, 1)
+                if (active) { ctx.setSourceRGBA(SYSC[0], SYSC[1], SYSC[2], 0.95); ctx.rectangle(tx3, hy + 23, w2, 2); ctx.fill() }
+                g.push({ kind: "tab", bx0: tx3 - 10, by0: hy, bx1: tx3 + w2 + 10, by1: hy + 28, on: () => { st.tab = id; ctrl.requestDraw() } })
                 tx3 += w2 + 30
             })
             const rt = `${st.temp ? st.temp + "°C" : "—"}    ${st.mhz ? (st.mhz / 1000).toFixed(2) + "GHz" : "—"}    ${kbToG(st.memU).toFixed(1)}/${kbToG(st.memT).toFixed(1)}G`
@@ -943,46 +945,50 @@ const SysCtrl = (SW, SH) => {
 
             const gTop = Y + 190, gH = H - 400
             ladder(ctx, X + 70, gTop, 30, gH, st.aCpu, SYSY, ch(0xf2db), "CPU", `${st.cpu}`, "r")
-            ladder(ctx, X + W - 100, gTop, 30, gH, st.aMem, SYSC, ch(0xf538), "MEM", `${Math.round(memF * 100)}`, "l")
+            ladder(ctx, X + W - 100, gTop, 30, gH, st.aMem, SYSC, ch(0xefc5), "MEM", `${Math.round(memF * 100)}`, "l")
 
             const mx = X + 350, mw = W - 700
             let cy3 = Y + 150
 
-            groupLabel(ctx, mx, cy3, "// CORE ARRAY")
-            const ncols = Math.max(1, st.cores.length)
-            const sw3 = Math.min(120, (mw - (ncols - 1) * 14) / ncols), sgw = ncols * sw3 + (ncols - 1) * 14
-            st.cores.forEach((v, i) => {
-                slotSq(ctx, mx + (mw - sgw) / 2 + i * (sw3 + 14), cy3 + 10, sw3, 62, `C${i}`, `${v}%`, v / 100, SYSY, v > 85)
-            })
+            if (st.tab === "task") {
+                groupLabel(ctx, mx, cy3, "// CORE ARRAY")
+                const ncols = Math.max(1, st.cores.length)
+                const sw3 = Math.min(120, (mw - (ncols - 1) * 14) / ncols), sgw = ncols * sw3 + (ncols - 1) * 14
+                st.cores.forEach((v, i) => {
+                    slotSq(ctx, mx + (mw - sgw) / 2 + i * (sw3 + 14), cy3 + 10, sw3, 62, `C${i}`, `${v}%`, v / 100, SYSY, v > 85)
+                })
 
-            cy3 += 92
-            groupLabel(ctx, mx, cy3, "// MEMORY")
-            const m3 = (mw / 2 - 40 - 28) / 3
-            slotSq(ctx, mx, cy3 + 10, m3, 62, "USED", `${kbToG(st.memU).toFixed(1)}G`, memF, SYSC, false)
-            slotSq(ctx, mx + m3 + 14, cy3 + 10, m3, 62, "CACHE", `${kbToG(st.memCache).toFixed(1)}G`, st.memCache / st.memT, SYSC, false)
-            slotSq(ctx, mx + (m3 + 14) * 2, cy3 + 10, m3, 62, "SWAP", st.swapT ? `${kbToG(st.swapU).toFixed(1)}G` : "—", st.swapT ? st.swapU / st.swapT : 0, SYSC, false)
+                cy3 += 92
+                groupLabel(ctx, mx, cy3, "// MEMORY")
+                const m3 = (mw / 2 - 40 - 28) / 3
+                slotSq(ctx, mx, cy3 + 10, m3, 62, "USED", `${kbToG(st.memU).toFixed(1)}G`, memF, SYSC, false)
+                slotSq(ctx, mx + m3 + 14, cy3 + 10, m3, 62, "CACHE", `${kbToG(st.memCache).toFixed(1)}G`, st.memCache / st.memT, SYSC, false)
+                slotSq(ctx, mx + (m3 + 14) * 2, cy3 + 10, m3, 62, "SWAP", st.swapT ? `${kbToG(st.swapU).toFixed(1)}G` : "—", st.swapT ? st.swapU / st.swapT : 0, SYSC, false)
 
-            const nx = mx + mw / 2 + 20
-            groupLabel(ctx, nx, cy3, "// NETWORK")
-            const n2 = (mw / 2 - 20 - 14) / 2
-            slotSq(ctx, nx, cy3 + 10, n2, 62, "UPLINK", `${st.up}`, -1, SYSY, false)
-            slotSq(ctx, nx + n2 + 14, cy3 + 10, n2, 62, "DOWNLINK", `${st.down}`, -1, SYSC, false)
-            drawGraph(ctx, nx, cy3 + 78, n2, 44, st.upHist, Math.max(1, ...st.upHist), SYSY)
-            drawGraph(ctx, nx + n2 + 14, cy3 + 78, n2, 44, st.downHist, Math.max(1, ...st.downHist), SYSC)
+                const nx = mx + mw / 2 + 20
+                groupLabel(ctx, nx, cy3, "// NETWORK")
+                const n2 = (mw / 2 - 20 - 14) / 2
+                slotSq(ctx, nx, cy3 + 10, n2, 62, "UPLINK", `${st.up}`, -1, SYSY, false)
+                slotSq(ctx, nx + n2 + 14, cy3 + 10, n2, 62, "DOWNLINK", `${st.down}`, -1, SYSC, false)
+                drawGraph(ctx, nx, cy3 + 78, n2, 44, st.upHist, Math.max(1, ...st.upHist), SYSY)
+                drawGraph(ctx, nx + n2 + 14, cy3 + 78, n2, 44, st.downHist, Math.max(1, ...st.downHist), SYSC)
 
-            groupLabel(ctx, mx, cy3 + 92, "// STORAGE")
-            st.disks.slice(0, 2).forEach((d, i) => {
-                slotSq(ctx, mx + i * (m3 + 14), cy3 + 102, m3, 44, d.mount.slice(0, 10), `${Math.round(d.frac * 100)}%`, d.frac, d.frac > 0.9 ? SYSR : SYSC, d.frac > 0.9)
-            })
+                groupLabel(ctx, mx, cy3 + 92, "// STORAGE")
+                st.disks.slice(0, 2).forEach((d, i) => {
+                    slotSq(ctx, mx + i * (m3 + 14), cy3 + 102, m3, 44, d.mount.slice(0, 10), `${Math.round(d.frac * 100)}%`, d.frac, d.frac > 0.9 ? SYSR : SYSC, d.frac > 0.9)
+                })
 
-            const py = cy3 + 172
-            groupLabel(ctx, mx, py, "// PROCESSES")
-            drawBtn(ctx, g.push, mx + mw - 150, py - 16, 150, 26, st.sel ? "FORCE KILL" : "SELECT A PROC", killSel, !!st.sel, SYSR, st.sel ? ch(0xf011) : "")
-            const ly = py + 14, lh = (Y + H) - ly - 46
-            const pinned = st.sel ? (st.selProc || st.procs.find((p) => p.pid === st.sel)) : null
-            const rest = pinned ? st.procs.filter((p) => p.pid !== st.sel) : st.procs
-            drawProcList(ctx, g.push, mx, ly, mw, lh, rest, st.scroll, st.sel, pinned, select, (p) => { select(p); killSel() })
-            txt(ctx, X + 46, Y + H - 22, "SCROLL processes · CLICK to select · RIGHT-CLICK kills · ESC closes", MONO, 9, SYSDIM, 0.5)
+                const py = cy3 + 172
+                groupLabel(ctx, mx, py, "// PROCESSES")
+                drawBtn(ctx, g.push, mx + mw - 150, py - 16, 150, 26, st.sel ? "FORCE KILL" : "SELECT A PROC", killSel, !!st.sel, SYSR, st.sel ? ch(0xf011) : "")
+                const ly = py + 14, lh = (Y + H) - ly - 46
+                const pinned = st.sel ? (st.selProc || st.procs.find((p) => p.pid === st.sel)) : null
+                const rest = pinned ? st.procs.filter((p) => p.pid !== st.sel) : st.procs
+                drawProcList(ctx, g.push, mx, ly, mw, lh, rest, st.scroll, st.sel, pinned, select, (p) => { select(p); killSel() })
+                txt(ctx, X + 46, Y + H - 22, "SCROLL processes · CLICK to select · RIGHT-CLICK kills · ESC closes", MONO, 9, SYSDIM, 0.5)
+            } else if (st.tab === "system") {
+            } else if (st.tab === "init") {
+            }
         },
     })
     return ctrl
