@@ -807,6 +807,17 @@ const slotSq = (ctx, x, y, w, h, label, val, frac, col, hot) => {
     }
 }
 const groupLabel = (ctx, x, y, s) => txt(ctx, x, y, s, MONO, 9.5, SYSR, 0.85, 1)
+const initRow = (ctx, push, x, y, w, app, onToggle) => {
+  const rh = 40, c: any = app.enabled ? SYSC : SYSR
+    bevel(ctx, x, y, w, rh, 8); ctx.setSourceRGBA(c[0] * 0.16, c[1] * 0.16, c[2] * 0.18, 0.26); ctx.fill()
+  bevel(ctx, x, y, w, rh, 8)
+      ctx.setSourceRGBA(c[0], c[1], c[2], 0.5); ctx.setLineWidth(0.9); ctx.stroke()
+    ctx.setSourceRGBA(c[0], c[1], c[2], 0.9); ctx.newPath(); ctx.arc(x + 18, y + rh / 2, 3.4, 0, Math.PI * 2); ctx.fill()
+  txt(ctx, x + 32, y + rh / 2 + 5, app.name, TITLE, 13.5, SYSC, 0.95, 1)
+    const bw = 176, bh = 26
+  const bx = x + w - bw - 12, by = y + (rh - bh) / 2
+    drawBtn(ctx, push, bx, by, bw, bh, app.enabled ? "ENABLED ON BOOT" : "DISABLED ON BOOT", () => onToggle(app), app.enabled, c)
+}
 
 const SysCtrl = (SW, SH) => {
     const st: any = {
@@ -814,7 +825,10 @@ const SysCtrl = (SW, SH) => {
         up: "0.0", down: "0.0", upHist: [], downHist: [], temp: 0, mhz: 0, load: "—", uptime: "—",
         disks: [], procs: [], sel: "", selProc: null, scroll: 0, prevCpu: null, prevNet: null, aCpu: 0, aMem: 0,
         tab: "task",
-        sysInfo: { distro: "—", kernel: "—", host: "—", user: "—", cpu: "—", gpu: "—", gtk: "—", icon: "—", shell: "—", wm: "—", res: `${SW}x${SH}` },
+        sysInfo: { distro: "—", kernel: "—", host: "—", user: "—", cpu: "—", gpu: "—", gtk: "—", icon: "—", shell: "—", wm: "—", res: `${SW}x${SH}`,
+          pkgs: "—", session: "—", term: "—", arch: "—", gpuLoad: -1, gpuHist: [],
+        coresPhys: "—", maxFreq: "—", cache: "—", gpuDriver: "—", gpuVram: "—", gpuTemp: "—",
+            procCount: "—", localIp: "—", battery: "—" },
         initApps: [], initScroll: 0,
     }
     let ctrl
@@ -859,6 +873,55 @@ fi`).then(() => timeout(200, fetchInitApps))
         sh("gsettings get org.gnome.desktop.interface gtk-theme 2>/dev/null | tr -d \"'\"").then((o) => { st.sysInfo.gtk = o.trim() || "—"; ctrl.requestDraw() })
         sh("hyprctl version -j 2>/dev/null | jq -r .version").then((o) => { st.sysInfo.wm = o.trim() ? `Hyprland ${o.trim()}` : "Hyprland"; ctrl.requestDraw() })
         sh("basename \"$SHELL\"").then((o) => { st.sysInfo.shell = o.trim() || "—"; ctrl.requestDraw() })
+      sh("pacman -Q 2>/dev/null | wc -l").then((o) => { st.sysInfo.pkgs = o.trim() || "—"; ctrl.requestDraw() })
+        sh("echo \"$XDG_SESSION_TYPE\"").then((o) => { st.sysInfo.session = o.trim() || "—"; ctrl.requestDraw() })
+    sh("basename \"$(echo $TERM)\"").then((o) => { st.sysInfo.term = o.trim() || "—"; ctrl.requestDraw() })
+        sh("uname -m").then((o) => { st.sysInfo.arch = o.trim() || "—"; ctrl.requestDraw() })
+      sh("ps -e --no-headers 2>/dev/null | wc -l").then((o) => { st.sysInfo.procCount = o.trim() || "—"; ctrl.requestDraw() })
+    sh("ip route get 1.1.1.1 2>/dev/null | grep -oP 'src \\K\\S+'").then((o) => { st.sysInfo.localIp = o.trim() || "—"; ctrl.requestDraw() })
+        sh("cat /sys/class/power_supply/BAT*/capacity 2>/dev/null | head -1").then((o) => { st.sysInfo.battery = o.trim() ? `${o.trim()}%` : "N/A"; ctrl.requestDraw() })
+    }
+  const fetchCpuExtra = () => {
+      sh("lscpu 2>/dev/null").then((o) => {
+    const cpuMetr = o
+        const grb = (re) => { const m = cpuMetr.match(re); return m ? m[1].trim() : "" }
+      const cps = parseInt(grb(/Core\(s\) per socket:\s*(\d+)/)) || 0, sock = parseInt(grb(/Socket\(s\):\s*(\d+)/)) || 1
+    st.sysInfo.coresPhys = cps ? `${cps * sock}` : "—"
+          const mhzRaw = parseFloat(grb(/CPU max MHz:\s*([\d.]+)/))
+        st.sysInfo.maxFreq = !isNaN(mhzRaw) ? `${(mhzRaw / 1000).toFixed(2)}GHz` : "—"
+      st.sysInfo.cache = grb(/L3 cache:\s*(.+)/) || grb(/L2 cache:\s*(.+)/) || "—"
+          ctrl.requestDraw()
+    })
+  }
+    const fetchGpuExtra = () => {
+        sh("lspci -k 2>/dev/null | grep -A3 -Ei 'vga|3d|display' | grep 'Kernel driver in use' | head -1 | cut -d: -f2").then((o) => { st.sysInfo.gpuDriver = o.trim() || "—"; ctrl.requestDraw() })
+      sh("cat /sys/class/drm/card*/device/mem_info_vram_total 2>/dev/null | head -1").then((o) => {
+        const vb = parseInt(o.trim())
+            st.sysInfo.gpuVram = vb > 0 ? `${(vb / 1073741824).toFixed(1)}G` : "—"
+        ctrl.requestDraw()
+      })
+        sh("nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader,nounits 2>/dev/null").then((o) => {
+      const gt = parseFloat(o.trim())
+          st.sysInfo.gpuTemp = !isNaN(gt) ? `${gt}°C` : "—"
+      ctrl.requestDraw()
+        })
+    }
+  const pushGpu = (v) => {
+    st.sysInfo.gpuLoad = v; st.sysInfo.gpuHist.push(v)
+    if (st.sysInfo.gpuHist.length > 40) st.sysInfo.gpuHist.shift()
+      ctrl.requestDraw()
+  }
+    const fetchGpuLoad = () => {
+      sh("nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null").then((o) => {
+        const v = parseFloat(o.trim()); if (!isNaN(v)) return pushGpu(v)
+      sh("cat /sys/class/drm/card*/device/gpu_busy_percent 2>/dev/null | head -1").then((o2) => {
+            const v2 = parseFloat(o2.trim()); if (!isNaN(v2)) return pushGpu(v2)
+        sh("A=$(cat /sys/class/drm/card*/device/drm/*/gt_act_freq_mhz 2>/dev/null|head -1); M=$(cat /sys/class/drm/card*/device/drm/*/gt_max_freq_mhz 2>/dev/null|head -1); echo \"$A $M\"").then((o3) => {
+          const [a, m] = o3.trim().split(/\s+/).map(Number)
+                if (m > 0 && !isNaN(a)) pushGpu(Math.round(a / m * 100))
+        })
+      })
+        })
     }
     const sample = () => {
         const c = cpuSnap()
@@ -910,6 +973,7 @@ fi`).then(() => timeout(200, fetchInitApps))
     })
     const refresh = () => {
         sample()
+        fetchGpuLoad()
         sh("ps -eo pid,comm,%cpu,%mem --sort=-%cpu --no-headers 2>/dev/null | head -20").then((o) => {
             st.procs = o.trim().split("\n").filter(Boolean).map((l) => { const p = l.trim().split(/\s+/); return { pid: p[0], name: p.slice(1, p.length - 2).join(" "), cpu: Math.round(parseFloat(p[p.length - 2]) / NCORES), mem: Math.round(parseFloat(p[p.length - 1])) } })
             ctrl.requestDraw()
@@ -933,7 +997,7 @@ fi`).then(() => timeout(200, fetchInitApps))
         onOpen: () => {
             st.sel = ""; st.selProc = null; st.scroll = 0; st.cpuHist = []; st.ramHist = []
             st.upHist = []; st.downHist = []; st.prevCpu = null; st.prevNet = null
-            startModalStats(); sample(); refresh(); refreshDisks(); fetchSysInfo(); fetchInitApps(); sysSndOn()
+            startModalStats(); sample(); refresh(); refreshDisks(); fetchSysInfo(); fetchCpuExtra(); fetchGpuExtra(); fetchInitApps(); sysSndOn()
         },
         onClose: () => { stopModalStats(); sysSndOff() },
         poll: refresh, pollMs: 900,
@@ -972,16 +1036,22 @@ fi`).then(() => timeout(200, fetchInitApps))
             let hx = X + 46
             hx = pair(hx, `${st.cpu}`, "CPU", SYSY) + 34
             hx = pair(hx, `${Math.round(memF * 100)}`, "MEM", SYSC) + 34
-            const tabs = [["TASK MANAGER", "task"], ["SYSTEM", "system"], ["INIT_DAEMON", "init"]]
+            const tabs = [["PROC_LIST", "task"], ["SYS_INFO", "system"], ["INIT_DAEMON", "init"]]
             ctx.selectFontFace(TITLE, 0, 1); ctx.setFontSize(13)
             let tw2 = tabs.reduce((a2, [t]) => a2 + ctx.textExtents(t).width + 30, 0)
             let tx3 = X + W / 2 - tw2 / 2
             tabs.forEach(([t, id]) => {
-                const w2 = ctx.textExtents(t).width, active = st.tab === id
-                txt(ctx, tx3, hy + 16, t, TITLE, 13, active ? SYSC : SYSR, active ? 0.98 : 0.72, 1)
-                if (active) { ctx.setSourceRGBA(SYSC[0], SYSC[1], SYSC[2], 0.95); ctx.rectangle(tx3, hy + 23, w2, 2); ctx.fill() }
-                g.push({ kind: "tab", bx0: tx3 - 10, by0: hy, bx1: tx3 + w2 + 10, by1: hy + 28, on: () => { st.tab = id; ctrl.requestDraw() } })
-                tx3 += w2 + 30
+              const w2 = ctx.textExtents(t).width, active = st.tab === id
+                const hv = g.push.hoverKey === `tab:${id}`
+              const tcol: any = active ? SYSC : (hv ? [1, 0.55, 0.5] : SYSR)
+                if (hv && !active) {
+              ctx.setSourceRGBA(tcol[0], tcol[1], tcol[2], 0.06 + 0.04 * Math.sin(Date.now() / 130))
+                    ctx.rectangle(tx3 - 8, hy, w2 + 16, 28); ctx.fill()
+                }
+                txt(ctx, tx3, hy + 16, t, TITLE, 13, tcol, active ? 0.98 : (hv ? 0.9 : 0.72), 1)
+              if (active) { ctx.setSourceRGBA(SYSC[0], SYSC[1], SYSC[2], 0.95); ctx.rectangle(tx3, hy + 23, w2, 2); ctx.fill() }
+                g.push({ kind: "tab", key: `tab:${id}`, hoverable: true, bx0: tx3 - 10, by0: hy, bx1: tx3 + w2 + 10, by1: hy + 28, on: () => { st.tab = id; ctrl.requestDraw() } })
+              tx3 += w2 + 30
             })
             const rt = `${st.temp ? st.temp + "°C" : "—"}    ${st.mhz ? (st.mhz / 1000).toFixed(2) + "GHz" : "—"}    ${kbToG(st.memU).toFixed(1)}/${kbToG(st.memT).toFixed(1)}G`
             ctx.selectFontFace(TITLE, 0, 1); ctx.setFontSize(15)
@@ -1034,33 +1104,59 @@ fi`).then(() => timeout(200, fetchInitApps))
                 drawProcList(ctx, g.push, mx, ly, mw, lh, rest, st.scroll, st.sel, pinned, select, (p) => { select(p); killSel() })
                 txt(ctx, X + 46, Y + H - 22, "SCROLL processes · CLICK to select · RIGHT-CLICK kills · ESC closes", MONO, 9, SYSDIM, 0.5)
             } else if (st.tab === "system") {
-                groupLabel(ctx, mx, cy3, "// SYSTEM")
-                const hdr2 = `${st.sysInfo.user}@${st.sysInfo.host}`
-                ctx.selectFontFace(TITLE, 0, 1); ctx.setFontSize(20)
-                txt(ctx, mx, cy3 + 38, hdr2, TITLE, 20, SYSC, 0.98, 1)
-                ctx.setSourceRGBA(SYSR[0], SYSR[1], SYSR[2], 0.4)
-                ctx.rectangle(mx, cy3 + 48, Math.min(mw, ctx.textExtents(hdr2).width + 40), 1); ctx.fill()
-                const rows = [
-                    ["OS", st.sysInfo.distro], ["KERNEL", st.sysInfo.kernel],
-                    ["CPU", st.sysInfo.cpu], ["CORES", `${NCORES}`],
-                    ["GPU", st.sysInfo.gpu], ["MEMORY", `${kbToG(st.memU).toFixed(1)} / ${kbToG(st.memT).toFixed(1)} G`],
-                    ["WM", st.sysInfo.wm], ["SHELL", st.sysInfo.shell],
-                    ["ICON THEME", st.sysInfo.icon], ["GTK THEME", st.sysInfo.gtk],
-                    ["RESOLUTION", st.sysInfo.res], ["UPTIME", st.uptime],
-                ]
-                const colW = Math.min(mw / 2 - 20, 420), ry2 = cy3 + 78
-                rows.forEach(([k, v], i) => {
-                    const cx = mx + (i % 2) * (colW + 40), cy4 = ry2 + Math.floor(i / 2) * 30
-                    txt(ctx, cx, cy4, k, MONO, 9.5, SYSR, 0.8, 1)
-                    txt(ctx, cx + 110, cy4, String(v || "—"), TITLE, 12, SYSC, 0.95, 1)
-                })
+            groupLabel(ctx, mx, cy3, "// SYS_INFO")
+                  const sw4 = (mw - 28) / 3, gpuOk = st.sysInfo.gpuLoad >= 0
+              slotSq(ctx, mx, cy3 + 14, sw4, 62, "GPU LOAD", gpuOk ? `${st.sysInfo.gpuLoad}%` : "N/A", gpuOk ? st.sysInfo.gpuLoad / 100 : -1, SYSY, gpuOk && st.sysInfo.gpuLoad > 85)
+                slotSq(ctx, mx + sw4 + 14, cy3 + 14, sw4, 62, "CORES", `${NCORES}`, -1, SYSC, false)
+              slotSq(ctx, mx + (sw4 + 14) * 2, cy3 + 14, sw4, 62, "UPTIME", st.uptime, -1, SYSC, false)
+
+                  let gy = cy3 + 94
+              groupLabel(ctx, mx, gy, "// CPU")
+                drawGraph(ctx, mx, gy + 10, mw, 38, st.cpuHist, 100, SYSY)
+              gy += 62
+                  if (gpuOk) {
+                groupLabel(ctx, mx, gy, "// GPU")
+                    drawGraph(ctx, mx, gy + 10, mw, 38, st.sysInfo.gpuHist, 100, SYSC)
+                  gy += 62
+                  }
+
+              const fields = [
+                  ["MACHINE_NAME", st.sysInfo.host], ["ACTIVE_USER", st.sysInfo.user], ["OS", st.sysInfo.distro],
+                ["KERNEL", st.sysInfo.kernel], ["ARCH", st.sysInfo.arch], ["CORE_CPU", st.sysInfo.coresPhys],
+                    ["THREADS", `${NCORES}`], ["CPU_MODEL", st.sysInfo.cpu], ["CPU_FREQ", st.sysInfo.maxFreq],
+                ["CPU_CACHE", st.sysInfo.cache], ["GPU_MODEL", st.sysInfo.gpu], ["GPU_DRIVER", st.sysInfo.gpuDriver],
+                  ["GPU_VRAM", st.sysInfo.gpuVram], ["GPU_TEMP", st.sysInfo.gpuTemp],
+                ["MEMORY", `${kbToG(st.memU).toFixed(1)}/${kbToG(st.memT).toFixed(1)}G`],
+                    ["SWAP", st.swapT ? `${kbToG(st.swapU).toFixed(1)}/${kbToG(st.swapT).toFixed(1)}G` : "—"],
+                  ["DISK", st.disks[0] ? `${st.disks[0].used.toFixed(0)}/${st.disks[0].size.toFixed(0)}G` : "—"],
+                ["BATTERY", st.sysInfo.battery], ["WM", st.sysInfo.wm], ["SESSION", st.sysInfo.session],
+                    ["SHELL", st.sysInfo.shell], ["TERMINAL", st.sysInfo.term], ["ICON_THEME", st.sysInfo.icon],
+                  ["GTK_THEME", st.sysInfo.gtk], ["RESOLUTION", st.sysInfo.res], ["PACKAGES", st.sysInfo.pkgs],
+                ["PROCESSES", st.sysInfo.procCount], ["LOAD_AVG", st.load], ["LOCAL_IP", st.sysInfo.localIp],
+              ]
+                  const cw3 = mw / 3
+              fields.forEach(([k, v], i) => {
+                const fx = mx + (i % 3) * cw3, fy = gy + 8 + Math.floor(i / 3) * 20
+                    const lbl = `// ${k}: `
+                  txt(ctx, fx, fy, lbl, MONO, 8.5, SYSR, 0.85, 0)
+                txt(ctx, fx + ctx.textExtents(lbl).width, fy, String(v || "—"), TITLE, 9.5, SYSC, 0.95, 0)
+              })
             } else if (st.tab === "init") {
-                groupLabel(ctx, mx, cy3, "// INIT_DAEMON")
-                const ly = cy3 + 20, lh = (Y + H) - ly - 46
-                drawList(ctx, g.push, mx, ly, mw, lh, st.initApps, st.initScroll,
-                    (a) => ({ label: a.name, right: a.enabled ? "AUTOBOOT: ON" : "AUTOBOOT: OFF", active: a.enabled, dot: true, col: a.enabled ? SYSC : SYSR }),
-                    (a) => toggleAutostart(a), () => { })
-                txt(ctx, X + 46, Y + H - 22, "SCROLL apps · CLICK to toggle AUTOBOOT · ESC closes", MONO, 9, SYSDIM, 0.5)
+              groupLabel(ctx, mx, cy3, "// INIT_DAEMON")
+                const total = st.initApps.length, onBoot = st.initApps.filter((a) => a.enabled).length
+              const cnt = `TOTAL ${total}   ON BOOT ${onBoot}   OFF ${total - onBoot}`
+                ctx.selectFontFace(MONO, 0, 0); ctx.setFontSize(9.5)
+              txt(ctx, mx + mw - ctx.textExtents(cnt).width, cy3, cnt, MONO, 9.5, SYSDIM, 0.75, 0)
+                const ly = cy3 + 24, lh = (Y + H) - ly - 46, step = 46
+              const vis = Math.max(1, Math.floor(lh / step))
+                st.initScroll = Math.min(st.initScroll, Math.max(0, st.initApps.length - vis))
+              ctx.save(); ctx.rectangle(mx - 3, ly - 3, mw + 6, lh + 6); ctx.clip()
+                for (let i = 0; i <= vis; i++) {
+                  const idx = st.initScroll + i; if (idx >= st.initApps.length) break
+                    initRow(ctx, g.push, mx, ly + i * step, mw, st.initApps[idx], toggleAutostart)
+                }
+                ctx.restore()
+                txt(ctx, X + 46, Y + H - 22, "SCROLL apps · CLICK button to toggle · ESC closes", MONO, 9, SYSDIM, 0.5)
             }
         },
     })
