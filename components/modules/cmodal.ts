@@ -814,8 +814,21 @@ const SysCtrl = (SW, SH) => {
         up: "0.0", down: "0.0", upHist: [], downHist: [], temp: 0, mhz: 0, load: "—", uptime: "—",
         disks: [], procs: [], sel: "", selProc: null, scroll: 0, prevCpu: null, prevNet: null, aCpu: 0, aMem: 0,
         tab: "task",
+        sysInfo: { distro: "—", kernel: "—", host: "—", user: "—", cpu: "—", gpu: "—", gtk: "—", icon: "—", shell: "—", wm: "—", res: `${SW}x${SH}` },
     }
     let ctrl
+    const fetchSysInfo = () => {
+        sh("uname -r").then((o) => { st.sysInfo.kernel = o.trim() || "—"; ctrl.requestDraw() })
+        sh("whoami").then((o) => { st.sysInfo.user = o.trim() || "—"; ctrl.requestDraw() })
+        sh("hostname").then((o) => { st.sysInfo.host = o.trim() || "—"; ctrl.requestDraw() })
+        sh("grep -m1 'model name' /proc/cpuinfo | cut -d: -f2").then((o) => { st.sysInfo.cpu = o.trim() || "—"; ctrl.requestDraw() })
+        sh("lspci 2>/dev/null | grep -Ei 'vga|3d|display' | head -1 | sed 's/^.*: //'").then((o) => { st.sysInfo.gpu = o.trim() || "—"; ctrl.requestDraw() })
+        sh("grep -m1 PRETTY_NAME /etc/os-release | cut -d= -f2 | tr -d '\"'").then((o) => { st.sysInfo.distro = o.trim() || "—"; ctrl.requestDraw() })
+        sh("gsettings get org.gnome.desktop.interface icon-theme 2>/dev/null | tr -d \"'\"").then((o) => { st.sysInfo.icon = o.trim() || "—"; ctrl.requestDraw() })
+        sh("gsettings get org.gnome.desktop.interface gtk-theme 2>/dev/null | tr -d \"'\"").then((o) => { st.sysInfo.gtk = o.trim() || "—"; ctrl.requestDraw() })
+        sh("hyprctl version -j 2>/dev/null | jq -r .version").then((o) => { st.sysInfo.wm = o.trim() ? `Hyprland ${o.trim()}` : "Hyprland"; ctrl.requestDraw() })
+        sh("basename \"$SHELL\"").then((o) => { st.sysInfo.shell = o.trim() || "—"; ctrl.requestDraw() })
+    }
     const sample = () => {
         const c = cpuSnap()
         if (st.prevCpu && st.prevCpu.total.length === c.total.length) {
@@ -889,7 +902,7 @@ const SysCtrl = (SW, SH) => {
         onOpen: () => {
             st.sel = ""; st.selProc = null; st.scroll = 0; st.cpuHist = []; st.ramHist = []
             st.upHist = []; st.downHist = []; st.prevCpu = null; st.prevNet = null
-            startModalStats(); sample(); refresh(); refreshDisks(); sysSndOn()
+            startModalStats(); sample(); refresh(); refreshDisks(); fetchSysInfo(); sysSndOn()
         },
         onClose: () => { stopModalStats(); sysSndOff() },
         poll: refresh, pollMs: 900,
@@ -987,6 +1000,26 @@ const SysCtrl = (SW, SH) => {
                 drawProcList(ctx, g.push, mx, ly, mw, lh, rest, st.scroll, st.sel, pinned, select, (p) => { select(p); killSel() })
                 txt(ctx, X + 46, Y + H - 22, "SCROLL processes · CLICK to select · RIGHT-CLICK kills · ESC closes", MONO, 9, SYSDIM, 0.5)
             } else if (st.tab === "system") {
+                groupLabel(ctx, mx, cy3, "// SYSTEM")
+                const hdr2 = `${st.sysInfo.user}@${st.sysInfo.host}`
+                ctx.selectFontFace(TITLE, 0, 1); ctx.setFontSize(20)
+                txt(ctx, mx, cy3 + 38, hdr2, TITLE, 20, SYSC, 0.98, 1)
+                ctx.setSourceRGBA(SYSR[0], SYSR[1], SYSR[2], 0.4)
+                ctx.rectangle(mx, cy3 + 48, Math.min(mw, ctx.textExtents(hdr2).width + 40), 1); ctx.fill()
+                const rows = [
+                    ["OS", st.sysInfo.distro], ["KERNEL", st.sysInfo.kernel],
+                    ["CPU", st.sysInfo.cpu], ["CORES", `${NCORES}`],
+                    ["GPU", st.sysInfo.gpu], ["MEMORY", `${kbToG(st.memU).toFixed(1)} / ${kbToG(st.memT).toFixed(1)} G`],
+                    ["WM", st.sysInfo.wm], ["SHELL", st.sysInfo.shell],
+                    ["ICON THEME", st.sysInfo.icon], ["GTK THEME", st.sysInfo.gtk],
+                    ["RESOLUTION", st.sysInfo.res], ["UPTIME", st.uptime],
+                ]
+                const colW = Math.min(mw / 2 - 20, 420), ry2 = cy3 + 78
+                rows.forEach(([k, v], i) => {
+                    const cx = mx + (i % 2) * (colW + 40), cy4 = ry2 + Math.floor(i / 2) * 30
+                    txt(ctx, cx, cy4, k, MONO, 9.5, SYSR, 0.8, 1)
+                    txt(ctx, cx + 110, cy4, String(v || "—"), TITLE, 12, SYSC, 0.95, 1)
+                })
             } else if (st.tab === "init") {
             }
         },
