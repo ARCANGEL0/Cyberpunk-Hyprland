@@ -815,8 +815,39 @@ const SysCtrl = (SW, SH) => {
         disks: [], procs: [], sel: "", selProc: null, scroll: 0, prevCpu: null, prevNet: null, aCpu: 0, aMem: 0,
         tab: "task",
         sysInfo: { distro: "—", kernel: "—", host: "—", user: "—", cpu: "—", gpu: "—", gtk: "—", icon: "—", shell: "—", wm: "—", res: `${SW}x${SH}` },
+        initApps: [], initScroll: 0,
     }
     let ctrl
+    const fetchInitApps = () => {
+        sh(`seen=""
+for f in "$HOME/.config/autostart"/*.desktop /etc/xdg/autostart/*.desktop; do
+  [ -f "$f" ] || continue
+  b=$(basename "$f")
+  case " $seen " in *" $b "*) continue;; esac
+  seen="$seen $b"
+  NAME=$(grep -m1 '^Name=' "$f" | cut -d= -f2-)
+  EN=1
+  grep -qE '^Hidden=true|^X-GNOME-Autostart-enabled=false' "$f" && EN=0
+  printf '%s\\t%s\\t%s\\n' "$f" "$NAME" "$EN"
+done`).then((o) => {
+            st.initApps = o.trim().split("\n").filter(Boolean).map((l) => {
+                const [path, name, en] = l.split("\t")
+                const base = (path || "").split("/").pop() || ""
+                return { path, base, name: name || base.replace(/\.desktop$/, ""), enabled: en === "1" }
+            })
+            ctrl.requestDraw()
+        })
+    }
+    const toggleAutostart = (app) => {
+        sh(`mkdir -p "$HOME/.config/autostart"
+DST="$HOME/.config/autostart/${app.base}"
+[ "${app.path}" != "$DST" ] && cp -f "${app.path}" "$DST"
+if grep -qE '^Hidden=true|^X-GNOME-Autostart-enabled=false' "$DST"; then
+  sed -i '/^Hidden=/d;/^X-GNOME-Autostart-enabled=/d' "$DST"
+else
+  printf '\\nX-GNOME-Autostart-enabled=false\\n' >> "$DST"
+fi`).then(() => timeout(200, fetchInitApps))
+    }
     const fetchSysInfo = () => {
         sh("uname -r").then((o) => { st.sysInfo.kernel = o.trim() || "—"; ctrl.requestDraw() })
         sh("whoami").then((o) => { st.sysInfo.user = o.trim() || "—"; ctrl.requestDraw() })
@@ -902,11 +933,14 @@ const SysCtrl = (SW, SH) => {
         onOpen: () => {
             st.sel = ""; st.selProc = null; st.scroll = 0; st.cpuHist = []; st.ramHist = []
             st.upHist = []; st.downHist = []; st.prevCpu = null; st.prevNet = null
-            startModalStats(); sample(); refresh(); refreshDisks(); fetchSysInfo(); sysSndOn()
+            startModalStats(); sample(); refresh(); refreshDisks(); fetchSysInfo(); fetchInitApps(); sysSndOn()
         },
         onClose: () => { stopModalStats(); sysSndOff() },
         poll: refresh, pollMs: 900,
-        onScroll: (d) => { if (st.tab === "task") { st.scroll = Math.max(0, Math.min(Math.max(0, st.procs.length - 1), st.scroll + d)); ctrl.requestDraw() } },
+        onScroll: (d) => {
+            if (st.tab === "task") { st.scroll = Math.max(0, Math.min(Math.max(0, st.procs.length - 1), st.scroll + d)); ctrl.requestDraw() }
+            else if (st.tab === "init") { st.initScroll = Math.max(0, Math.min(Math.max(0, st.initApps.length - 1), st.initScroll + d)); ctrl.requestDraw() }
+        },
         draw: (ctx, g) => {
             const X = g.X, Y = g.Y, W = g.w, H = g.h
             const memF = st.memU / st.memT
@@ -1021,6 +1055,12 @@ const SysCtrl = (SW, SH) => {
                     txt(ctx, cx + 110, cy4, String(v || "—"), TITLE, 12, SYSC, 0.95, 1)
                 })
             } else if (st.tab === "init") {
+                groupLabel(ctx, mx, cy3, "// INIT_DAEMON")
+                const ly = cy3 + 20, lh = (Y + H) - ly - 46
+                drawList(ctx, g.push, mx, ly, mw, lh, st.initApps, st.initScroll,
+                    (a) => ({ label: a.name, right: a.enabled ? "AUTOBOOT: ON" : "AUTOBOOT: OFF", active: a.enabled, dot: true, col: a.enabled ? SYSC : SYSR }),
+                    (a) => toggleAutostart(a), () => { })
+                txt(ctx, X + 46, Y + H - 22, "SCROLL apps · CLICK to toggle AUTOBOOT · ESC closes", MONO, 9, SYSDIM, 0.5)
             }
         },
     })
