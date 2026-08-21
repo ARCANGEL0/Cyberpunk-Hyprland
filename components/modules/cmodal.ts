@@ -818,6 +818,19 @@ const initRow = (ctx, push, x, y, w, app, onToggle) => {
   const bx = x + w - bw - 12, by = y + (rh - bh) / 2
     drawBtn(ctx, push, bx, by, bw, bh, app.enabled ? "ENABLED ON BOOT" : "DISABLED ON BOOT", () => onToggle(app), app.enabled, c)
 }
+const holoFrame = (ctx, x, y, w, h) => {
+  ctx.setSourceRGBA(0.02, 0.05, 0.06, 0.55); ctx.rectangle(x, y, w, h); ctx.fill()
+    ctx.setSourceRGBA(SYSC[0], SYSC[1], SYSC[2], 0.5); ctx.setLineWidth(1); ctx.rectangle(x, y, w, h); ctx.stroke()
+  ctx.setSourceRGBA(SYSC[0], SYSC[1], SYSC[2], 0.15); ctx.setLineWidth(4); ctx.rectangle(x, y, w, h); ctx.stroke()
+    const tck = 18
+  ctx.setSourceRGBA(SYSC[0], SYSC[1], SYSC[2], 0.9); ctx.setLineWidth(1.6)
+    const cnrs = [[x, y, 1, 1], [x + w, y, -1, 1], [x, y + h, 1, -1], [x + w, y + h, -1, -1]]
+  cnrs.forEach(([ccx, ccy, sx, sy]) => {
+      ctx.newPath(); ctx.moveTo(ccx, ccy + tck * sy); ctx.lineTo(ccx, ccy); ctx.lineTo(ccx + tck * sx, ccy); ctx.stroke()
+  })
+    const scnY = y + ((Date.now() / 12) % h)
+  ctx.setSourceRGBA(SYSC[0], SYSC[1], SYSC[2], 0.08); ctx.rectangle(x, scnY, w, 2); ctx.fill()
+}
 
 const SysCtrl = (SW, SH) => {
     const st: any = {
@@ -830,6 +843,7 @@ const SysCtrl = (SW, SH) => {
         coresPhys: "—", maxFreq: "—", cache: "—", gpuDriver: "—", gpuVram: "—", gpuTemp: "—",
             procCount: "—", localIp: "—", battery: "—" },
         initApps: [], initScroll: 0,
+      logLines: [],
     }
     let ctrl
     const fetchInitApps = () => {
@@ -971,9 +985,16 @@ fi`).then(() => timeout(200, fetchInitApps))
         })
         ctrl.requestDraw()
     })
+    const fetchLogs = () => {
+      sh("journalctl -n 200 --no-pager 2>/dev/null").then((o) => {
+        st.logLines = o.split("\n").filter(Boolean)
+            ctrl.requestDraw()
+      })
+    }
     const refresh = () => {
         sample()
         fetchGpuLoad()
+      if (st.tab === "logs") fetchLogs()
         sh("ps -eo pid,comm,%cpu,%mem --sort=-%cpu --no-headers 2>/dev/null | head -20").then((o) => {
             st.procs = o.trim().split("\n").filter(Boolean).map((l) => { const p = l.trim().split(/\s+/); return { pid: p[0], name: p.slice(1, p.length - 2).join(" "), cpu: Math.round(parseFloat(p[p.length - 2]) / NCORES), mem: Math.round(parseFloat(p[p.length - 1])) } })
             ctrl.requestDraw()
@@ -1036,7 +1057,7 @@ fi`).then(() => timeout(200, fetchInitApps))
             let hx = X + 46
             hx = pair(hx, `${st.cpu}`, "CPU", SYSY) + 34
             hx = pair(hx, `${Math.round(memF * 100)}`, "MEM", SYSC) + 34
-            const tabs = [["PROC_LIST", "task"], ["SYS_INFO", "system"], ["INIT_DAEMON", "init"]]
+            const tabs = [["PROC_LIST", "task"], ["SYS_INFO", "system"], ["INIT_DAEMON", "init"], ["INFO_LOGS", "logs"]]
             ctx.selectFontFace(TITLE, 0, 1); ctx.setFontSize(13)
             let tw2 = tabs.reduce((a2, [t]) => a2 + ctx.textExtents(t).width + 30, 0)
             let tx3 = X + W / 2 - tw2 / 2
@@ -1050,7 +1071,7 @@ fi`).then(() => timeout(200, fetchInitApps))
                 }
                 txt(ctx, tx3, hy + 16, t, TITLE, 13, tcol, active ? 0.98 : (hv ? 0.9 : 0.72), 1)
               if (active) { ctx.setSourceRGBA(SYSC[0], SYSC[1], SYSC[2], 0.95); ctx.rectangle(tx3, hy + 23, w2, 2); ctx.fill() }
-                g.push({ kind: "tab", key: `tab:${id}`, hoverable: true, bx0: tx3 - 10, by0: hy, bx1: tx3 + w2 + 10, by1: hy + 28, on: () => { st.tab = id; ctrl.requestDraw() } })
+                g.push({ kind: "tab", key: `tab:${id}`, hoverable: true, bx0: tx3 - 10, by0: hy, bx1: tx3 + w2 + 10, by1: hy + 28, on: () => { st.tab = id; if (id === "logs") fetchLogs(); ctrl.requestDraw() } })
               tx3 += w2 + 30
             })
             const rt = `${st.temp ? st.temp + "°C" : "—"}    ${st.mhz ? (st.mhz / 1000).toFixed(2) + "GHz" : "—"}    ${kbToG(st.memU).toFixed(1)}/${kbToG(st.memT).toFixed(1)}G`
@@ -1157,6 +1178,21 @@ fi`).then(() => timeout(200, fetchInitApps))
                 }
                 ctx.restore()
                 txt(ctx, X + 46, Y + H - 22, "SCROLL apps · CLICK button to toggle · ESC closes", MONO, 9, SYSDIM, 0.5)
+          } else if (st.tab === "logs") {
+              groupLabel(ctx, mx, cy3, "// INFO_LOGS")
+            const fx0 = mx, fy0 = cy3 + 20, fw0 = mw
+              const fh0 = (Y + H) - fy0 - 46
+            holoFrame(ctx, fx0, fy0, fw0, fh0)
+              ctx.save(); ctx.rectangle(fx0 + 10, fy0 + 10, fw0 - 20, fh0 - 20); ctx.clip()
+                const lh2 = 15, vis2 = Math.floor((fh0 - 20) / lh2)
+              const lgLines = st.logLines.slice(-vis2)
+            lgLines.forEach((line, i) => {
+                  const low = line.toLowerCase()
+                const lcol: any = /error|fail|critical/.test(low) ? SYSR : (/warn/.test(low) ? SYSY : SYSC)
+                  txt(ctx, fx0 + 16, fy0 + 22 + i * lh2, line.slice(0, 180), MONO, 8.5, lcol, 0.85, 0)
+            })
+              ctx.restore()
+            txt(ctx, X + 46, Y + H - 22, "journalctl -n 200 · auto-refresh · ESC closes", MONO, 9, SYSDIM, 0.5)
             }
         },
     })
