@@ -229,7 +229,7 @@ else
 fi
 
 hdr "QUICKSHELL · login"
-QT6="qt6-base qt6-declarative qt6-svg qt6-wayland"
+QT6="glibc lib32-glibc qt6-multimedia-ffmpeg qt6-base qt6-declarative qt6-svg qt6-wayland"
 sudo pacman -S --needed $QT6 || warn "qt6 install failed |::| run: sudo pacman -S $QT6"
 if ! command -v qs >/dev/null 2>&1 || ! qs --version >/dev/null 2>&1; then
   step "installing quickshell"
@@ -839,7 +839,7 @@ else
     warn "GPU Terminal not installed. |::| Skipping..."
   else
     GT_OK=0
-    GT_DEPS="rust llvm-libs cmake pkgconf binutils fontconfig freetype2 libxkbcommon wayland vulkan-icd-loader mesa"
+    GT_DEPS="rust llvm-libs cmake pkgconf binutils fontconfig freetype2 libxkbcommon wayland vulkan-icd-loader mesa glibc lib32-glibc"
     step "installing rust toolchain + build dependencies..."
     sudo pacman -S --needed --noconfirm $GT_DEPS || warn "some build dependencies failed to install"
     if ! gt_rust_ok; then
