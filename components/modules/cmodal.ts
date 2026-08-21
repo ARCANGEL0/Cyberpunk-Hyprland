@@ -1157,10 +1157,10 @@ fi`).then(() => timeout(200, fetchInitApps))
               ]
                   const cw3 = mw / 3
               fields.forEach(([k, v], i) => {
-                const fx = mx + (i % 3) * cw3, fy = gy + 8 + Math.floor(i / 3) * 20
+                const fx = mx + (i % 3) * cw3, fy = gy + 12 + Math.floor(i / 3) * 30
                     const lbl = `// ${k}: `
-                  txt(ctx, fx, fy, lbl, MONO, 8.5, SYSR, 0.85, 0)
-                txt(ctx, fx + ctx.textExtents(lbl).width, fy, String(v || "—"), TITLE, 9.5, SYSC, 0.95, 0)
+                  txt(ctx, fx, fy, lbl, MONO, 10.5, SYSR, 0.85, 0)
+                txt(ctx, fx + ctx.textExtents(lbl).width, fy, String(v || "—"), TITLE, 11.5, SYSC, 0.95, 0)
               })
             } else if (st.tab === "init") {
               groupLabel(ctx, mx, cy3, "// INIT_DAEMON")
