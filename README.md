@@ -262,7 +262,7 @@ suggestions are welcome! :)
 
  ### if you enjoy the project and want to support future development:
 
-[![Star on GitHub](https://img.shields.io/github/stars/ARCANGEL0/ResumeMe?style=social)](https://github.com/ARCANGEL0/Cyberpunk-Hyprland)
+[![Star on GitHub](https://img.shields.io/github/stars/ARCANGEL0/CyberArch-DotFiles?style=social)](https://github.com/ARCANGEL0/CyberArch-dotfiles)
 [![Follow on GitHub](https://img.shields.io/github/followers/ARCANGEL0?style=social)](https://github.com/ARCANGEL0)
 <br>
 
